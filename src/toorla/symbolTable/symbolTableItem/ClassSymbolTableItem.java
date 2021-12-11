@@ -1,20 +1,46 @@
 package toorla.symbolTable.symbolTableItem;
 
-import toorla.symbolTable.ClassSymbolTable;
+import toorla.ast.declaration.classDecs.ClassDeclaration;
 import toorla.symbolTable.SymbolTable;
 
 public class ClassSymbolTableItem extends SymbolTableItem {
 
-    public ClassSymbolTable symbolTable;
+    public static final String classModifier = "class_";
+    private SymbolTable symbolTable;
+    private SymbolTable parentSymbolTable;
+    private ClassDeclaration classDeclaration = null;
 
-    public ClassSymbolTable parentSymbolTable;
-
-    public ClassSymbolTableItem (String name, SymbolTable pre) {
+    public ClassSymbolTableItem(String name) {
         this.name = name;
-        this.symbolTable = new ClassSymbolTable(pre);
     }
 
+    @Override
     public String getKey() {
-        return this.name;
+        return ClassSymbolTableItem.classModifier + name;
+    }
+
+    public SymbolTable getSymbolTable() {
+        return symbolTable;
+    }
+
+    public SymbolTable getParentSymbolTable() {
+        return parentSymbolTable;
+    }
+
+    public void setSymbolTable(SymbolTable symbolTable) {
+        this.symbolTable = symbolTable;
+    }
+
+    public void setParentSymbolTable(SymbolTable symbolTable) {
+        this.parentSymbolTable = symbolTable;
+    }
+
+    public void setClassDeclaration(ClassDeclaration classDeclaration){
+        this.classDeclaration = classDeclaration;
+    }
+
+    public ClassDeclaration getClassDeclaration() {
+        return classDeclaration;
     }
 }
+

@@ -1,29 +1,38 @@
 package toorla.symbolTable.symbolTableItem;
 
-import toorla.symbolTable.SymbolTable;
-import toorla.types.AnonymousType;
+import toorla.ast.declaration.classDecs.classMembersDecs.AccessModifier;
 import toorla.types.Type;
 
+import java.util.List;
+
 public class MethodSymbolTableItem extends SymbolTableItem {
-
-    public SymbolTable symbolTable;
-
+    public static final String methodModifier = "method_";
     private Type returnType;
+    private List<Type> argumentsTypes;
+    private AccessModifier accessModifier;
 
-    public MethodSymbolTableItem(SymbolTable pre , String name , Type returnType ){
-        symbolTable = new SymbolTable(pre);
-        this.name = name;
+    public MethodSymbolTableItem(String name, Type returnType, List<Type> argumentsTypes , AccessModifier accessModifier) {
         this.returnType = returnType;
-    }
-
-    public MethodSymbolTableItem(SymbolTable pre , String name ){
-        symbolTable = new SymbolTable(pre);
+        this.argumentsTypes = argumentsTypes;
         this.name = name;
-        this.returnType = new AnonymousType();
+        this.accessModifier = accessModifier;
     }
 
     @Override
     public String getKey() {
-        return name;
+        return MethodSymbolTableItem.methodModifier + name;
+    }
+
+
+    public List<Type> getArgumentsTypes() {
+        return argumentsTypes;
+    }
+
+    public Type getReturnType() {
+        return returnType;
+    }
+
+    public AccessModifier getAccessModifier() {
+        return accessModifier;
     }
 }
