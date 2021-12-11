@@ -13,9 +13,7 @@ public class Identifier extends Expression {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public void setName(String s) { name = s ;}
 
     public <R> R accept(Visitor<R> visitor) {
         return visitor.visit(this);

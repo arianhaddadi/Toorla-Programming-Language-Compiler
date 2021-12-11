@@ -1,626 +1,775 @@
 grammar Toorla;
-
 @header {
-    import toorla.* ;
-    import toorla.ast.* ;
-    import toorla.ast.declaration.* ;
-    import toorla.ast.expression.* ;
-    import toorla.ast.statement.* ;
-    import toorla.ast.statement.localVarStats.* ;
-    import toorla.ast.statement.returnStatement.*;
-    import toorla.ast.expression.binaryExpression.*;
-    import toorla.ast.expression.unaryExpression.* ;
-    import toorla.ast.expression.value.* ;
-    import toorla.ast.declaration.classDecs.*;
-    import toorla.ast.declaration.classDecs.classMembersDecs.*;
-    import toorla.ast.declaration.localVarDecs.* ;
-    import toorla.types.* ;
-    import toorla.types.arrayType.* ;
-    import toorla.types.singleType.* ;
-    import java.util.ArrayList ;
+	import toorla.ast.Program;
+	import toorla.ast.Tree;
+	import toorla.ast.declaration.classDecs.*;
+	import toorla.ast.declaration.classDecs.classMembersDecs.*;
+	import toorla.ast.declaration.localVarDecs.*;
+	import toorla.ast.expression.*;
+	import toorla.ast.expression.binaryExpression.*;
+	import toorla.ast.expression.unaryExpression.*;
+	import toorla.ast.expression.value.*;
+	import toorla.ast.statement.*;
+	import toorla.ast.statement.localVarStats.*;
+	import toorla.ast.statement.returnStatement.*;
+	import toorla.types.*;
+	import toorla.types.singleType.*;
+	import toorla.types.arrayType.*;
+	import java.util.List;
+	import java.util.ArrayList;
 }
 
-@members {
-
-}
-
-// Parser Rules
-
-// Line Numbers arent added
-
-program
-	returns[Program p]:
-	toorlaProgram { $p = $toorlaProgram.p; $p.line = $toorlaProgram.start.getLine() ;} EOF;
-
-toorlaProgram
-	returns[Program p]:{$p = new Program();}
-	(a = classDeclaration { $p.addClass($a.dec); })* b = entryClassDeclaration { $p.addClass($b.dec); 
-		} (c = classDeclaration { $p.addClass($c.dec); })* {$p.line = $start.getLine() ;};
-
-classDeclaration
-	returns[ClassDeclaration dec]: {}
-	CLASS id = IDENTIFIER (INHERITS parent = IDENTIFIER)?{
-                if($parent != null)
-                        $dec = new ClassDeclaration(new Identifier($id.text) , new Identifier($parent.text)); 
-                else
-                        $dec = new ClassDeclaration(new Identifier($id.text)); 
-        } COLLON (
-		(m = methodDecSentence | f = fieldDecSentence) {
-            if (($m.ctx != null)) {
-                $dec.addMethodDeclaration($m.md) ;
-            }
-            else if (($f.ctx != null)) {
-                $dec.addFieldsDeclarations($f.fdl);
-            }
+@members
+{
+    void setNodePosition( Tree node , int line , int col )
+    {
+        if( node != null )
+        {
+            node.line = line;
+            node.col = col;
         }
-	)* END {$dec.line = $CLASS.getLine() ;};
+    }
+}
+program
+	returns[Program mProgram]:
+	{$mProgram=new Program();} (
+		c1 = classDeclaration[ false ] {$mProgram.addClass($c1.mClass);}
+	)* c2 = entryClassDeclaration {$mProgram.addClass($c2.mClass);
+	} (c3 = classDeclaration[ false ] {$mProgram.addClass($c3.mClass);})* EOF
+	;
+
+classDeclaration[ boolean isEntry ]
+	returns[ClassDeclaration mClass]:
+	'class' n = ID ('inherits' p = ID)? ':'
+	{
+	    Identifier className = new Identifier( $n.text );
+	    Identifier parentName = new Identifier(null);
+        setNodePosition( className , $n.getLine() , $n.getCharPositionInLine() );
+        if( $p != null && $p.text != null )
+        {
+            parentName = new Identifier($p.text);
+            setNodePosition( parentName , $p.getLine() , $p.getCharPositionInLine() );
+        }
+	    if( isEntry )
+	        $mClass=new EntryClassDeclaration( className , parentName );
+        else
+            $mClass=new ClassDeclaration( className , parentName );
+	}
+	(
+		f = fieldDeclaration
+		{
+		    $mClass.addFieldsDeclarations($f.mFields);
+		}
+		| m = methodDeclaration
+		{
+		    $mClass.addMethodDeclaration($m.mMethod);
+		}
+	)* 'end'
+	;
 
 entryClassDeclaration
-	returns[EntryClassDeclaration dec]:
-        ENTRY CLASS id = IDENTIFIER (
-		INHERITS parent = IDENTIFIER
-	)? {
-                if($parent != null)
-                        $dec = new EntryClassDeclaration(new Identifier($id.text) , new Identifier($parent.text)); 
-                else
-                        $dec = new EntryClassDeclaration(new Identifier($id.text)); 
-        } COLLON (
-		(m = methodDecSentence | f = fieldDecSentence) {
-            if (($m.ctx != null)) {
-                $dec.addMethodDeclaration($m.md) ;
-            }
-            else if (($f.ctx != null)) {
-                $dec.addFieldsDeclarations($f.fdl);
-            }
-        }
-	)* END {$dec.line = $ENTRY.getLine() ;};
+	returns[ClassDeclaration mClass]:
+	('entry') c = classDeclaration[ true ]
+	{
+	    $mClass=$c.mClass;
+	}
+	;
 
-methodDecSentence
-	returns[MethodDeclaration md]
-	locals[ArrayList<Identifier> argsIds , ArrayList<Type> argsTypes]:
-	{$argsIds = new ArrayList<Identifier>(); $argsTypes = new ArrayList<Type>();} a =
-		ACCESS_MODIFIER? FUNCTION id = IDENTIFIER LPARENT (
-		argId1 = IDENTIFIER COLLON (
-			argType1 = DATA_TYPE
-			| argDefdType1 = IDENTIFIER
-		) (isArr1 = LBRACKET RBRACKET)? {
-                        $argsIds.add(new Identifier($argId1.text));
-                if($isArr1 != null){
-                        if($argDefdType1 != null)
-                                $argsTypes.add(new ArrayType(new UserDefinedType(new ClassDeclaration(new Identifier($argDefdType1.text)))));
-                        else if ($argType1.text.equals( "string"))
-                                $argsTypes.add(new ArrayType(new StringType()));
-                        else if ($argType1.text.equals( "int"))
-                                $argsTypes.add(new ArrayType(new IntType()));
-                        else if ($argType1.text.equals( "bool"))
-                                $argsTypes.add(new ArrayType(new BoolType()));}
-                else { 
-                    if($argDefdType1 != null)
-                            $argsTypes.add(new UserDefinedType(new ClassDeclaration(new Identifier($argDefdType1.text))));
-                    else if ($argType1.text.equals( "string"))
-                            $argsTypes.add(new StringType());
-                    else if ($argType1.text.equals( "int"))
-                            $argsTypes.add(new IntType());
-                    else if ($argType1.text.equals( "bool"))
-                            $argsTypes.add(new BoolType());}
-        } (
-			COMMA argIdi = IDENTIFIER COLLON (
-				argTypei = DATA_TYPE
-				| argDefdTypei = IDENTIFIER
-			) (isArri = LBRACKET RBRACKET)? {
-                $argsIds.add(new Identifier($argIdi.text));
-                if($isArri != null){
-                    if($argDefdTypei != null)
-                            $argsTypes.add(new ArrayType(new UserDefinedType(new ClassDeclaration(new Identifier($argDefdTypei.text)))));
-                    else if ($argTypei.text.equals("string"))
-                            $argsTypes.add(new ArrayType(new StringType()));
-                    else if ($argTypei.text.equals("int"))
-                            $argsTypes.add(new ArrayType(new IntType()));
-                    else if ($argTypei.text.equals("bool"))
-                            $argsTypes.add(new ArrayType(new BoolType()));}
-                else  {
-                    if($argDefdTypei != null)
-                            $argsTypes.add(new UserDefinedType(new ClassDeclaration(new Identifier($argDefdTypei.text))));
-                    else if ($argTypei.text.equals("string"))
-                            $argsTypes.add(new StringType());
-                    else if ($argTypei.text.equals("int"))
-                            $argsTypes.add(new IntType());
-                    else if ($argTypei.text.equals("bool"))
-                            $argsTypes.add(new BoolType());}
-            }
-		)*
-	)? RPARENT RETURNS (
-		argTypeR = DATA_TYPE
-		| argDefdTypeR = IDENTIFIER
-	) (isArrR = LBRACKET RBRACKET)? COLLON body = block END {
-        $md = new MethodDeclaration(new Identifier($id.text)) ;
-        if($a != null)
-            if($a.text.equals("public"))
-                $md.setAccessModifier(AccessModifier.ACCESS_MODIFIER_PUBLIC);
-            else
-                $md.setAccessModifier(AccessModifier.ACCESS_MODIFIER_PRIVATE);
-        for(int i = 0; (i < $argsIds.size()) && ($argsIds.size() > 0) ; i++)
-            $md.addArg(new ParameterDeclaration($argsIds.get(i) , $argsTypes.get(i)));
-        if($isArrR != null){
-            if($argDefdTypeR != null)
-                $md.setReturnType(new ArrayType(new UserDefinedType(new ClassDeclaration(new Identifier($argDefdTypeR.text)))));
-            else if ($argTypeR.text.equals("string"))
-                $md.setReturnType(new ArrayType(new StringType()));
-            else if ($argTypeR.text.equals("int"))
-                $md.setReturnType(new ArrayType(new IntType()));
-            else if ($argTypeR.text.equals("bool"))
-                $md.setReturnType(new ArrayType(new BoolType()));}
-        else  {
-            if($argDefdTypeR != null)
-                $md.setReturnType(new UserDefinedType(new ClassDeclaration(new Identifier($argDefdTypeR.text))));
-            else if ($argTypeR.text.equals("string"))
-                $md.setReturnType(new StringType());
-            else if ($argTypeR.text.equals("int"))
-                $md.setReturnType(new IntType());
-            else if ($argTypeR.text.equals("bool"))
-                $md.setReturnType(new BoolType());}
-        for(int i = 0; i < $body.sts.body.size() ; i++)
-            $md.addStatement($body.sts.body.get(i));
-        $md.line = $FUNCTION.getLine() ;
-    };
+fieldDeclaration
+	returns[List<FieldDeclaration> mFields]
+	locals[AccessModifier access]:
+	{
+        $mFields=new ArrayList<>();
+	}
+	(a = access_modifier
+	{
+	    $access=$a.mAccess;
+	}
+	)?
+	'field' i = ID
+	{
+	    Identifier fieldName = new Identifier($i.text);
+	    setNodePosition( fieldName , $i.getLine() , $i.getCharPositionInLine() );
+	    FieldDeclaration fieldDecl = new FieldDeclaration( fieldName );
+	    setNodePosition( fieldDecl , $i.getLine() , $i.getCharPositionInLine() );
+	    $mFields.add( fieldDecl );
+	}
+	(
+		',' ii = ID
+		{
+		    fieldName = new Identifier($ii.text);
+            setNodePosition( fieldName , $ii.getLine() , $ii.getCharPositionInLine() );
+            fieldDecl = new FieldDeclaration( fieldName );
+            setNodePosition( fieldDecl , $ii.getLine() , $ii.getCharPositionInLine() );
+            $mFields.add( fieldDecl );
+		}
+	)* t = toorlaType ';'
+	{
+	    for(FieldDeclaration field:$mFields)
+	    {
+	        field.setType($t.mType);
+	        if( $access != null )
+	            field.setAccessModifier($access);
+	    }
+	}
+	;
 
-fieldDecSentence
-	returns[ArrayList<FieldDeclaration> fdl]
-	locals[ArrayList<Identifier> ids , Type t]:
-	{$ids = new ArrayList<Identifier>();} a = ACCESS_MODIFIER? FIELD id1 = IDENTIFIER {
-        $ids.add(new Identifier($id1.text));
-    } (
-		(COMMA idi = IDENTIFIER) {
-            $ids.add(new Identifier($idi.text));
-        }
-	)* (type = DATA_TYPE | defdType = IDENTIFIER) (
-		isArr = LBRACKET RBRACKET
-	)? SEMICOLLON {
-        if($isArr != null){
-            if($defdType != null)
-                    $t = new ArrayType(new UserDefinedType(new ClassDeclaration(new Identifier($defdType.text))));
-            else if ($type.text.equals("string"))
-                    $t = new ArrayType(new StringType());
-            else if ($type.text.equals("int"))
-                    $t = new ArrayType(new IntType());
-            else if ($type.text.equals("bool"))
-                    $t = new ArrayType(new BoolType());}
-        else  {
-            if($defdType != null)
-                    $t = new UserDefinedType(new ClassDeclaration(new Identifier($defdType.text)));
-            else if ($type.text.equals("string"))
-                    $t = new StringType();
-            else if ($type.text.equals("int"))
-                    $t = new IntType();
-            else if ($type.text.equals("bool"))
-                    $t = new BoolType();}
-        $fdl = new ArrayList<FieldDeclaration>();
-        if($a == null)
-                for (int i = 0 ; i < $ids.size() ; i++ ) {
-                        $fdl.add(new FieldDeclaration($ids.get(i) , $t));
-                }
-        else if($a.text.equals("public"))
-                for (int i = 0 ; i < $ids.size() ; i++ ) 
-                        $fdl.add(new FieldDeclaration($ids.get(i) , $t , AccessModifier.ACCESS_MODIFIER_PUBLIC));
-        else 
-                for (int i = 0 ; i < $ids.size() ; i++ ) 
-                        $fdl.add(new FieldDeclaration($ids.get(i) , $t , AccessModifier.ACCESS_MODIFIER_PRIVATE));   
-             
-    };
+access_modifier
+	returns[AccessModifier mAccess]:
+	'public'
+	{
+	    $mAccess=AccessModifier.ACCESS_MODIFIER_PUBLIC;
+	}
+	| 'private'
+	{
+	    $mAccess=AccessModifier.ACCESS_MODIFIER_PRIVATE;
+	}
+	;
 
-block
-	returns[Block sts]:{$sts = new Block() ;} (
+methodDeclaration
+	returns[MethodDeclaration mMethod]
+	locals[AccessModifier access]:
+	(
+	    a = access_modifier
+	    {
+	        $access=$a.mAccess;
+	    }
+	)?
+	    'function' i = ID
+	    {
+	        Identifier methodName = new Identifier($i.text);
+	        setNodePosition( methodName , $i.getLine() , $i.getCharPositionInLine() );
+	        $mMethod=new MethodDeclaration( methodName );
+		}
 		(
-			(s = statement | BEGIN b = block END) {
-                if($s.ctx != null){
-                        $sts.addStatement($s.s);
-                        $sts.line = $s.start.getLine() ;
-                        }
-                else if($b.ctx != null){
-                        $sts.addStatement($b.sts);
-                        $sts.line = $BEGIN.getLine() ;
-                }        
-                }
-		)*
-	);
+		'(' ')'
+		|
+		(
+			'(' i1 = ID ':' t1 = toorlaType
+			{
+			    Identifier parameterName = new Identifier($i1.text);
+			    setNodePosition( parameterName , $i1.getLine() , $i1.getCharPositionInLine() );
+			    ParameterDeclaration parameterDecl = new ParameterDeclaration( parameterName , $t1.mType );
+			    setNodePosition( parameterDecl , $i1.getLine() , $i1.getCharPositionInLine() );
+			    $mMethod.addArg( parameterDecl );
+			}
+			(
+				',' i2 = ID ':' t2 = toorlaType
+				{
+				    parameterName = new Identifier($i2.text);
+                    setNodePosition( parameterName , $i2.getLine() , $i2.getCharPositionInLine() );
+                    parameterDecl = new ParameterDeclaration( parameterName , $t2.mType );
+                    setNodePosition( parameterDecl , $i2.getLine() , $i2.getCharPositionInLine() );
+                    $mMethod.addArg( parameterDecl );
+				}
+			)* ')'
+		)
+	)
+    'returns' t = toorlaType
+    {
+        $mMethod.setReturnType($t.mType);
+    }
+    ':' (s = statement
+	{
+	    $mMethod.addStatement($s.mStmt);
+	}
+	)* 'end'
+	{
+	    if( $access != null )
+	        $mMethod.setAccessModifier($access);
+	};
+
+closedStatement returns[ Statement mStmt ]:
+    s1 = statementBlock {$mStmt=$s1.mStmt;}
+    | conditionalStat=closedConditional { $mStmt= $conditionalStat.mStmt; }
+    | s3 = statementClosedLoop {$mStmt=$s3.mStmt;}
+    | s4 = statementWrite {$mStmt=$s4.mStmt;}
+    | s5 = statementAssignment {$mStmt=$s5.mStmt;}
+    | s6 = statementReturn {$mStmt=$s6.mStmt;}
+    | s7 = statementVarDef {$mStmt=$s7.mStmt;}
+    | s8 = statementContinue {$mStmt=$s8.mStmt;}
+    | s9 = statementBreak {$mStmt=$s9.mStmt;}
+    | incStat=statementInc { $mStmt = $incStat.incStatement; }
+    | decStat=statementDec { $mStmt = $decStat.decStatement; }
+    | ';' { $mStmt = new Skip(); }
+;
+
+closedConditional returns[ Statement mStmt ]
+    locals[ List<Expression> conditions , List<Statement> statements ]:
+    {
+        $statements = new ArrayList<>();
+        $conditions = new ArrayList<>();
+    }
+    'if' '(' ifExp=expression ')' ifStat=closedStatement
+    {
+        $conditions.add( $ifExp.expr );
+        $statements.add( $ifStat.mStmt );
+    }
+    (
+    'elif' '(' elifExp=expression ')' elifStat=closedStatement
+    {
+        $conditions.add( $elifExp.expr );
+        $statements.add( $elifStat.mStmt );
+    }
+    )*
+    'else' elseStmt=closedStatement
+    {
+        Statement lastIfStat = $statements.get( $statements.size() - 1 );
+        Expression lastIfCondition = $conditions.get( $conditions.size() - 1 );
+        Conditional previousConditionalStat = new Conditional( lastIfCondition , lastIfStat , $elseStmt.mStmt );
+        Conditional currentConditionalStat = previousConditionalStat;
+        for( int i = $statements.size() - 2 ; i >= 0 ; i-- )
+        {
+            previousConditionalStat = currentConditionalStat;
+            Expression currentIfCondition = $conditions.get( i );
+            Statement currentIfStat = $statements.get( i );
+            currentConditionalStat = new Conditional( currentIfCondition , currentIfStat
+                , previousConditionalStat );
+
+        }
+        $mStmt = currentConditionalStat;
+    }
+
+
+
+;
+
+openConditional returns[ Statement mStmt ]
+    locals[ List<Expression> conditions , List<Statement> statements ]:
+    (
+    'if' '(' ifExp=expression ')' ifStat=statement
+    {
+        $mStmt = new Conditional( $ifExp.expr , $ifStat.mStmt );
+    }
+    )
+    |
+    (
+    'if' '(' ifExp=expression ')' secondIfStat=closedStatement
+    {
+        $statements = new ArrayList<>();
+        $conditions = new ArrayList<>();
+        $conditions.add( $ifExp.expr );
+        $statements.add( $secondIfStat.mStmt );
+    }
+    (
+    'elif' '(' elifExp=expression ')' elifStat=closedStatement
+    {
+        $conditions.add( $elifExp.expr );
+        $statements.add( $elifStat.mStmt );
+    }
+    )*
+    'elif' '(' lastElifExp=expression ')' lastElifStmt=statement
+    {
+        Conditional previousConditionalStat = new Conditional( $lastElifExp.expr
+        , $lastElifStmt.mStmt , new Skip() );
+        Conditional currentConditionalStat = previousConditionalStat;
+        for( int i = $statements.size() - 1 ; i >= 0 ; i-- )
+        {
+            previousConditionalStat = currentConditionalStat;
+            Expression currentIfCondition = $conditions.get( i );
+            Statement currentIfStat = $statements.get( i );
+            currentConditionalStat = new Conditional( currentIfCondition , currentIfStat
+                , previousConditionalStat );
+
+        }
+        $mStmt = currentConditionalStat;
+    }
+    )
+    |
+    (
+    'if' '(' ifExp=expression ')' thirdIfStat=closedStatement
+    {
+        $statements = new ArrayList<>();
+        $conditions = new ArrayList<>();
+        $conditions.add( $ifExp.expr );
+        $statements.add( $thirdIfStat.mStmt );
+    }
+    (
+    'elif' '(' elifExp=expression ')' elifStat=closedStatement
+    {
+        $conditions.add( $elifExp.expr );
+        $statements.add( $elifStat.mStmt );
+    }
+    )*
+    'else' elseStmt=openStatement
+    {
+        Statement lastIfStat = $statements.get( $statements.size() - 1 );
+        Expression lastIfCondition = $conditions.get( $conditions.size() - 1 );
+        Conditional previousConditionalStat = new Conditional( lastIfCondition , lastIfStat , $elseStmt.mStmt );
+        Conditional currentConditionalStat = previousConditionalStat;
+        for( int i = $statements.size() - 2 ; i >= 0 ; i-- )
+        {
+            previousConditionalStat = currentConditionalStat;
+            Expression currentIfCondition = $conditions.get( i );
+            Statement currentIfStat = $statements.get( i );
+            currentConditionalStat = new Conditional( currentIfCondition , currentIfStat
+                , previousConditionalStat );
+
+        }
+        $mStmt = currentConditionalStat;
+    }
+    )
+
+
+
+
+
+;
+
+openStatement returns[ Statement mStmt ]:
+    s1 = statementOpenLoop {$mStmt=$s1.mStmt;}
+    | conditionalStat=openConditional { $mStmt= $conditionalStat.mStmt; }
+    ;
+
 
 statement
-	returns[Statement s]:
-	printLine {$s = $printLine.s ;}
-	| variableDec {$s = $variableDec.s ;}
-	| assignStatement {$s = $assignStatement.s ;}
-	| incOrDecStatement {$s = $incOrDecStatement.s ;}
-	| ifStatement {$s = $ifStatement.s ;}
-	| returnStatement {$s = $returnStatement.s ;}
-	| whileStatement {$s = $whileStatement.s ;}
-	| BREAK SEMICOLLON {$s = new Break(); $s.line = $BREAK.getLine() ;}
-	| CONTINUE SEMICOLLON {$s = new Continue() ;$s.line = $CONTINUE.getLine() ;}
-	| SEMICOLLON {$s = new Skip() ;$s.line = $SEMICOLLON.getLine() ;};
+	returns[Statement mStmt]:
+	s1 = closedStatement {$mStmt=$s1.mStmt;}
+	| s2 = openStatement {$mStmt=$s2.mStmt;}
+	;
 
-printLine
-	returns[PrintLine s]:
-	PRINT LPARENT (e = expr) RPARENT SEMICOLLON {
-                $s = new PrintLine($e.e);
-                $s.line = $PRINT.getLine() ;
-        };
-
-/*
- objectMethodCall:
- IDENTIFIER DOT IDENTIFIER LPARENT (expr (COMMA expr)*)? RPARENT SEMICOLLON;
- 
- methodCall:
- IDENTIFIER LPARENT (expr (COMMA expr)*)? RPARENT SEMICOLLON;
- */
-
-variableDec
-	returns[Statement s]
-	locals[LocalVarDef temp , ArrayList<LocalVarDef> ds , LocalVarsDefinitions temp1]:
-	{$ds = new ArrayList<LocalVarDef>();} VAR id1 = IDENTIFIER ASSIGN e1 = expr {
-                $temp = new LocalVarDef(new Identifier($id1.text) , $e1.e);
-                $temp.line = $VAR.getLine() ;
-                $ds.add($temp) ;
-        } (
-		(COMMA idi = IDENTIFIER ASSIGN ei = expr) {
-                $temp = new LocalVarDef(new Identifier($idi.text) , $ei.e);
-                $temp.line = $VAR.getLine() ;
-                $ds.add($temp) ;                
-                }
-	)* SEMICOLLON {
-                if($ds.size() == 1) 
-                        $s = $ds.get(0) ;
-                else if($ds.size() > 1){
-                        $temp1 = (LocalVarsDefinitions)new LocalVarsDefinitions() ;
-                        for(int i=0; i < $ds.size() ; i++)
-                                $temp1.addVarDefinition($ds.get(i));
-                        $s = $temp1 ;
-                        $s.line = $VAR.getLine() ;
-                }
-        };
-
-assignStatement
-	returns[Assign s]: (id = IDENTIFIER | f = fieldOrArrayCall | l = lonelyArrayCall) ASSIGN e = expr SEMICOLLON {
-        if($id != null)
-                $s = new Assign(new Identifier($id.text) , $e.e);
-        else if($f.ctx != null) 
-                $s = new Assign( $f.e , $e.e); 
-        else if($l.ctx != null)
-             $s = new Assign( $l.e , $e.e); 
-        $s.line = $ASSIGN.getLine() ;        
-
-};
-incOrDecStatement
-	returns[Statement s]:
-	ex = expr (i = INCREASE | DECREASE) SEMICOLLON {
-        if($i != null)
-                $s = new IncStatement($ex.e);
-        else
-                $s = new DecStatement($ex.e);
-        $s.line = $ex.start.getLine() ;              
-};
-
-ifStatement
-	returns[Conditional s]:
-	IF? p=LPARENT c = expr RPARENT (
-		(BEGIN tb = block END)
-		| ts = statement
-	) (
-		ELIF i = ifStatement
-		| ELSE ((BEGIN etb = block END) | ets = statement)
-	)? {
-                if($i.ctx != null){
-                        if( $tb.ctx != null )
-                                $s = new Conditional($c.e , $tb.sts , $i.s );
-                        else 
-                                $s = new Conditional($c.e , $ts.s , $i.s );
-                }
-                else if($etb.ctx != null ){
-                        if( $tb.ctx != null )
-                                $s = new Conditional($c.e , $tb.sts , $etb.sts );
-                        else 
-                                $s = new Conditional($c.e , $ts.s , $etb.sts );}
-                else if($ets.ctx != null){
-                        if( $tb.ctx != null )
-                                $s = new Conditional($c.e , $tb.sts , $ets.s );
-                        else 
-                                $s = new Conditional($c.e , $ts.s , $ets.s );}
-                else{
-                        if( $tb.ctx != null )
-                                $s = new Conditional($c.e , $tb.sts );
-                        else 
-                                $s = new Conditional($c.e , $ts.s  );}
-
-                $s.line = $c.start.getLine() ;
-        };
-
-returnStatement
-	returns[Return s]:
-	RETURN expr SEMICOLLON {
-                $s = new Return($expr.e);
-                $s.line = $RETURN.getLine() ;
-        };
-
-whileStatement
-	returns[While s]:
-	WHILE LPARENT expr RPARENT (statement | BEGIN block END) {
-                if($statement.ctx != null)
-                        $s = new While($expr.e , $statement.s);
-                else
-                        $s = new While($expr.e , $block.sts);
-                $s.line = $WHILE.getLine() ;
-
-        };
-
-expr
-	returns[Expression e]:
-	orExpr {
-                $e = $orExpr.e;
-                $e.line = $orExpr.start.getLine() ;
-        };
-orExpr
-	returns[Expression e]:
-	a1 = andExpr {$e = $a1.e;$e.line = $a1.start.getLine() ;}
-	| o1 = orExpr OR a2 = andExpr {$e = new Or($o1.e , $a2.e);$e.line = $OR.getLine() ;};
-andExpr
-	returns[Expression e]:
-	e1 = equalityExpr {$e = $e1.e;$e.line = $e1.start.getLine() ;}
-	| a1 = andExpr AND e2 = equalityExpr {$e = new And($a1.e , $e2.e);$e.line = $AND.getLine() ;};
-equalityExpr
-	returns[Expression e]:
-	r1 = relationalExpr {$e = $r1.e;$e.line = $r1.start.getLine() ;}
-	| e1 = equalityExpr EQUALS r2 = relationalExpr {$e = new Equals($e1.e , $r2.e);$e.line = $EQUALS.getLine() ;
+statementVarDef
+	returns[Statement mStmt]:
+	    {
+	        $mStmt=new LocalVarsDefinitions();
+	    }
+	    'var' i1 = ID '=' e1 = expression
+	    {
+	        Identifier localVarName = new Identifier( $i1.text );
+	        setNodePosition( localVarName , $i1.getLine() , $i1.getCharPositionInLine() );
+	        LocalVarDef localVarDef = new LocalVarDef( localVarName , $e1.expr );
+	        setNodePosition( localVarDef , $i1.getLine() , $i1.getCharPositionInLine() );
+	        ((LocalVarsDefinitions)$mStmt).addVarDefinition( localVarDef );
+		} (
+		',' i2 = ID '=' e2 = expression
+		{
+		    localVarName = new Identifier( $i2.text );
+            setNodePosition( localVarName , $i2.getLine() , $i2.getCharPositionInLine() );
+            localVarDef = new LocalVarDef( localVarName , $e2.expr );
+            setNodePosition( localVarDef , $i2.getLine() , $i2.getCharPositionInLine() );
+		    ((LocalVarsDefinitions)$mStmt).addVarDefinition( localVarDef );
 		}
-	| e2 = equalityExpr NOT_EQUAL r3 = relationalExpr {$e = new NotEquals($e2.e , $r3.e);$e.line = $NOT_EQUAL.getLine() ;
-		};
+	)* ';';
 
-relationalExpr
-	returns[Expression e]:
-	a1 = additionalExpr {$e = $a1.e;$e.line = $a1.start.getLine() ;}
-	| r1 = relationalExpr GREATER_THAN a2 = additionalExpr {$e = new GreaterThan($r1.e , $a2.e);$e.line = $GREATER_THAN.getLine() ;
+statementBlock
+	returns[Statement mStmt]:
+	{$mStmt=new Block();} 'begin' (
+		s = statement {((Block)$mStmt).addStatement($s.mStmt);}
+	)* 'end';
+
+statementContinue
+	returns[Statement mStmt]:
+	myContinue='continue' ';'
+	{
+	    $mStmt=new Continue();
+	    setNodePosition( $mStmt , $myContinue.getLine() , $myContinue.getCharPositionInLine() );
+	};
+
+statementBreak
+	returns[Statement mStmt]:
+	myBreak='break' ';'
+	{
+	    $mStmt=new Break();
+	    setNodePosition( $mStmt , $myBreak.getLine() , $myBreak.getCharPositionInLine() );
+	};
+
+statementReturn
+	returns[Statement mStmt]:
+	myReturn='return'
+		e = expression ';'
+	{
+	    $mStmt=new Return($e.expr);
+	    setNodePosition( $mStmt , $myReturn.getLine() , $myReturn.getCharPositionInLine() );
+	}
+	;
+
+statementClosedLoop
+	returns[Statement mStmt]:
+	'while' '(' e = expression ')' s = closedStatement {$mStmt=new While($e.expr,$s.mStmt);};
+
+statementOpenLoop returns[ Statement mStmt ]:
+    'while' '(' e = expression ')' s = openStatement {$mStmt=new While($e.expr,$s.mStmt);}
+;
+
+statementWrite
+	returns[Statement mStmt]:
+	printLine='print' '(' e = expression ')' ';'
+	{
+	    $mStmt=new PrintLine($e.expr);
+	    setNodePosition( $mStmt , $printLine.getLine() , $printLine.getCharPositionInLine() );
+	};
+
+statementAssignment
+	returns[Statement mStmt]:
+	left=expression assignOp='=' right = expression ';'
+	{
+	    $mStmt=new Assign( $left.expr , $right.expr );
+	    setNodePosition( $mStmt , $assignOp.getLine() , $assignOp.getCharPositionInLine() );
+	};
+
+statementInc returns[ Statement incStatement ]:
+    lvalExpr=expression incOp='++' ';'
+    {
+        $incStatement = new IncStatement( $lvalExpr.expr );
+        setNodePosition( $incStatement , $incOp.getLine() ,$incOp.getCharPositionInLine() );
+    }
+;
+
+
+statementDec returns[ Statement decStatement ]:
+    lvalExpr=expression decOp='--' ';'
+    {
+        $decStatement = new DecStatement( $lvalExpr.expr );
+        setNodePosition( $decStatement , $decOp.getLine() ,$decOp.getCharPositionInLine() );
+    }
+
+;
+expression
+	returns[Expression expr]:
+	e = expressionOr {$expr=$e.expr;};
+
+
+expressionOr
+	returns[Expression expr]:
+	a = expressionAnd ot = expressionOrTemp[ $a.expr ]
+	{
+	    $expr = $ot.expr;
+	};
+
+expressionOrTemp[ Expression leftOperand ]
+	returns[Expression expr ] locals[ BinaryExpression middleExpr ]:
+	orOp='||' a = expressionAnd
+	{
+	    $middleExpr = new Or( $leftOperand , $a.expr );
+	    setNodePosition( $middleExpr , $orOp.getLine() , $orOp.getCharPositionInLine() );
+	}
+	ot = expressionOrTemp[ $middleExpr ]
+	{
+	    $expr = $ot.expr;
+	}
+	|
+	{
+	    $expr = $leftOperand;
+	};
+
+expressionAnd
+	returns[Expression expr]:
+	e = expressionEq at = expressionAndTemp[ $e.expr ]
+	{
+	    $expr = $at.expr;
+	};
+
+expressionAndTemp[ Expression leftOperand ]
+	returns[Expression expr] locals[ BinaryExpression middleExpr ]:
+	andOp='&&' e = expressionEq
+	{
+	    $middleExpr = new And( $leftOperand , $e.expr );
+	    setNodePosition( $middleExpr , $andOp.getLine() , $andOp.getCharPositionInLine() );
+	}
+	at = expressionAndTemp[ $middleExpr ]
+	{
+	    $expr = $at.expr;
+	}
+	|
+	{
+        $expr = $leftOperand;
+	};
+
+expressionEq
+	returns[Expression expr]:
+	c = expressionCmp et = expressionEqTemp[ $c.expr ]
+	{
+	    $expr = $et.expr;
+	};
+
+expressionEqTemp[ Expression leftOperand ] returns[ Expression expr ] locals[ BinaryExpression middleExpr ]:
+	(
+		eqOp='=='
+		{
+		    $middleExpr=new Equals();
+		    setNodePosition( $middleExpr , $eqOp.getLine() , $eqOp.getCharPositionInLine() );
 		}
-	| r2 = relationalExpr LESS_THAN a3 = additionalExpr {$e = new LessThan($r2.e , $a3.e);$e.line = $LESS_THAN.getLine() ;
-		};
-
-additionalExpr
-	returns[Expression e]:
-	m1 = multiplicativeExpression {$e = $m1.e;$e.line = $m1.start.getLine() ;}
-	| a1 = additionalExpr PLUS m2 = multiplicativeExpression {$e = new Plus($a1.e , $m2.e);$e.line = $PLUS.getLine() ;
+		| neqOp='<>'
+		{
+		    $middleExpr=new NotEquals();
+		    setNodePosition( $middleExpr , $neqOp.getLine() , $neqOp.getCharPositionInLine() );
 		}
-	| a2 = additionalExpr MINUS m3 = multiplicativeExpression {$e = new Minus($a2.e , $m3.e);$e.line = $MINUS.getLine() ;
-		};
+	) c=expressionCmp
+	{
+	   $middleExpr.setSides( $leftOperand , $c.expr );
+	}
+	et=expressionEqTemp[ $middleExpr ]
+	{
+	    $expr = $et.expr;
+	}
+	|
+	{
+	    $expr = $leftOperand;
+	}
+	;
 
-multiplicativeExpression
-	returns[Expression e]:
-	u1 = unaryExpr {$e = $u1.e;$e.line = $u1.start.getLine() ;}
-	| m1 = multiplicativeExpression MULT u2 = unaryExpr {$e = new Times($m1.e , $u2.e); $e.line = $MULT.getLine() ;
+expressionCmp
+	returns[Expression expr]:
+	a = expressionAdd ct = expressionCmpTemp[ $a.expr ]
+	{
+        $expr = $ct.expr;
+	};
+
+expressionCmpTemp[ Expression leftOperand ]
+	returns[Expression expr] locals[ BinaryExpression middleExpr ]:
+	(
+		ltOp='<'
+		{
+		    $middleExpr=new LessThan();
+		    setNodePosition( $middleExpr , $ltOp.getLine() , $ltOp.getCharPositionInLine() );
 		}
-	| m2 = multiplicativeExpression DIV u3 = unaryExpr {$e = new Division($m2.e , $u3.e);$e.line = $DIV.getLine() ;
+		|
+		gtOp='>'
+		{
+		    $middleExpr=new GreaterThan();
+		    setNodePosition( $middleExpr , $gtOp.getLine() , $gtOp.getCharPositionInLine() );
 		}
-	| m3 = multiplicativeExpression MOD u4 = unaryExpr {$e = new Modulo($m3.e , $u4.e);$e.line = $MOD.getLine() ;
-		};
+	) a = expressionAdd
+	{
+	    $middleExpr.setSides( $leftOperand , $a.expr );
+	}
+	ct = expressionCmpTemp[ $middleExpr ]
+	{
+        $expr = $ct.expr;
+	}
+	|
+	{
+	    $expr = $leftOperand;
+	}
+	;
 
-unaryExpr
-	returns[Expression e]:
-	a = arrayOrMethodOrfieldCall {
-                $e = $a.e;
-                $e.line = $a.start.getLine() ;
+expressionAdd
+	returns[Expression expr]:
+	m = expressionMultMod at = expressionAddTemp[ $m.expr ]
+	{
+	    $expr = $at.expr;
+	}
+	;
+
+expressionAddTemp[ Expression leftOperand ]
+	returns[Expression expr] locals[ BinaryExpression middleExpr ]:
+	(
+		addOp='+'
+		{
+		    $middleExpr = new Plus();
+		    setNodePosition( $middleExpr , $addOp.getLine() , $addOp.getCharPositionInLine() );
+		}
+		| subOp='-'
+		{
+		    $middleExpr = new Minus();
+		    setNodePosition( $middleExpr , $subOp.getLine() , $subOp.getCharPositionInLine() );
+		}
+	) m = expressionMultMod
+	{
+        $middleExpr.setSides( $leftOperand , $m.expr );
+	}
+	at = expressionAddTemp[ $middleExpr ]
+	{
+	    $expr = $at.expr;
+	}
+	|
+	    {
+	        $expr = $leftOperand;
+	    }
+	;
+
+expressionMultMod
+	returns[Expression expr]:
+	u = expressionUnary mt = expressionMultModTemp[ $u.expr ]
+	{
+	    $expr = $mt.expr;
+	}
+	;
+
+expressionMultModTemp[ Expression leftOperand ]
+	returns[Expression expr] locals[ BinaryExpression middleExpr ] :
+	(
+		mulOp='*'
+		{
+		    $middleExpr = new Times();
+		    setNodePosition( $middleExpr , $mulOp.getLine() , $mulOp.getCharPositionInLine() );
+		}
+		| divOp='/'
+		{
+            $middleExpr = new Division();
+            setNodePosition( $middleExpr , $divOp.getLine() , $divOp.getCharPositionInLine() );
         }
-	| MINUS u1 = unaryExpr {
-                $e = new Neg($u1.e);
-                $e.line = $MINUS.getLine() ;
-        }
-	| NOT u2 = unaryExpr {
-                $e = new Not($u2.e);
-                $e.line = $NOT.getLine() ;                
-        };
+		| modOp='%'
+		{
+		    $middleExpr = new Modulo();
+		    setNodePosition( $middleExpr , $modOp.getLine() , $modOp.getCharPositionInLine() );
+		}
+	) u = expressionUnary
+	{
+        $middleExpr.setSides( $leftOperand , $u.expr );
+	}
+	mt = expressionMultModTemp[ $middleExpr ]
+	{
+	    $expr = $mt.expr;
+	}
+	|
+	{
+	    $expr = $leftOperand;
+	}
+	;
 
-// (SELF | IDENTIFIER | arrayCall) ( DOT (IDENTIFIER | arrayCall) )+
-objectMethod
-	returns[MethodCall e]
-	locals[ArrayList<Expression> args]:
-	{$args = new ArrayList<Expression>();} (
-		fieldOrArrayCall DOT 
-		| ins = IDENTIFIER DOT 
-		| lonelyArrayCall DOT  |
-	) id=IDENTIFIER LPARENT (
-		e1 = expr {
-                $args.add($e1.e) ;
-        } (
-			(COMMA ei = expr) {
-                $args.add($ei.e) ;
-        }
-		)*
-	)? RPARENT {
-        if($fieldOrArrayCall.ctx != null ){
-                $e = new MethodCall ($fieldOrArrayCall.e , new Identifier($id.text)); 
-                for(int i = 0 ; i < $args.size() ; i++)
-                        $e.addArg($args.get(i));
-                $e.line = $fieldOrArrayCall.start.getLine() ;
-        }
-        else if($ins != null) {
-                $e = new MethodCall (new Identifier($ins.text) , new Identifier($id.text)); 
-                for(int i = 0 ; i < $args.size() ; i++)
-                        $e.addArg($args.get(i));
-                $e.line = $ins.getLine() ;
-        } else if($lonelyArrayCall.ctx != null) {
-                $e = new MethodCall ($lonelyArrayCall.e , new Identifier($id.text)); 
-                for(int i = 0 ; i < $args.size() ; i++)
-                        $e.addArg($args.get(i));
-                $e.line = $lonelyArrayCall.start.getLine() ;
-        } else {
-                $e = new MethodCall (new Self() , new Identifier($id.text)); 
-                for(int i = 0 ; i < $args.size() ; i++)
-                        $e.addArg($args.get(i));
-                $e.line = $id.getLine() ;
-        }
-        };
-/*1
- method
- returns[Expression e]:
- IDENTIFIER LPARENT (expr (COMMA expr)*)? RPARENT;
- */
-constVal
-	returns[Expression e]:
-	INT_LITERAL { $e = new IntValue($INT_LITERAL.int);
-                $e.line = $INT_LITERAL.getLine() ;
-        }
-	| STRING_LITERAL {$e = new StringValue($STRING_LITERAL.text);
-                $e.line = $STRING_LITERAL.getLine() ;
-        }
-	| BOOL_LITERAL {
-                if($BOOL_LITERAL.text.equals("true"))
-                        $e = new BoolValue(true) ;
-                else
-                        $e = new BoolValue(false) ;
-                $e.line = $BOOL_LITERAL.getLine() ;
-     
-        };
-lonelyArrayCall
-	returns[Expression e]: (IDENTIFIER LBRACKET (expr) RBRACKET) {
-         $e = new ArrayCall(new Identifier($IDENTIFIER.text) , $expr.e );
-         $e.line = $IDENTIFIER.getLine() ;
- };
-/*
- fieldCall
- returns[Expression e]: (
- (arrayCall | IDENTIFIER | SELF) (
- DOT ( arrayCall |
- IDENTIFIER)
- )+ SEMICOLLON?
- );
- 
- */
-/*
- fieldCall returns[Expression e] : 
- (fieldCall | arrayCall) DOT IDENTIFIER | IDENTIFIER | SELF;
- 
- arrayCall returns [Expression e]: fieldCall LBRACKET expr RBRACKET ;
- */
+expressionUnary
+	returns[Expression expr]:
+	(
+		notOp='!'
+		{
+		    $expr=new Not();
+		    setNodePosition( $expr , $notOp.getLine() , $notOp.getCharPositionInLine() );
+		}
+		| negOp='-'
+		{
+		    $expr=new Neg();
+		    setNodePosition( $expr , $negOp.getLine() , $negOp.getCharPositionInLine() );
+		}
+	) u = expressionUnary {((UnaryExpression)$expr).setExpr($u.expr);}
+	| m = expressionMethods {$expr=$m.expr;};
 
-fieldOrArrayCall
-	returns[Expression e]: (id1 = IDENTIFIER | SELF) {
-                if($id1 != null)
-                        $e = new Identifier($id1.text) ;
-                else
-                        $e = new Self() ;
-        } (
-		(LBRACKET e1 = expr RBRACKET) {
-                if($e1.ctx != null)
-                        $e = new ArrayCall($e , $e1.e) ;
-        }
-	)? DOT id2 = IDENTIFIER { $e = new FieldCall($e , new Identifier($id2.text)) ;} (
-		(LBRACKET e2 = expr RBRACKET) {
-                if($e2.ctx != null)
-                        $e = new ArrayCall($e , $e2.e) ;
-        }
-	)? (
-		DOT idi = IDENTIFIER { $e = new FieldCall($e , new Identifier($id2.text)) ;} (
-			(LBRACKET e2 = expr RBRACKET) {
-                if($e2.ctx != null)
-                        $e = new ArrayCall($e , $e2.e) ;
-        }
-		)?
-	)*;
+expressionMethods
+	returns[Expression expr]:
+	o = expressionOther mt = expressionMethodsTemp[$o.expr]
+	 {
+	    $expr=$mt.expr;
+	};
 
-newArray
-	returns[Expression e]
-	locals[SingleType t]: (
-		NEW (type = DATA_TYPE | defdType = IDENTIFIER) LBRACKET expr RBRACKET
-	) {
-                if($defdType != null)
-                        $t = new UserDefinedType(new ClassDeclaration(new Identifier($defdType.text)));
-                else if ($type.text.equals("string"))
-                        $t = new StringType();
-                else if ($type.text.equals("int"))
-                        $t = new IntType();
-                else if ($type.text.equals("bool"))
-                        $t = new BoolType();
-                $e = new NewArray($t , $expr.e);
-        };
-newClassInstance
-	returns[Expression e]: (NEW IDENTIFIER LPARENT RPARENT) {
-              $e = new NewClassInstance(new Identifier($IDENTIFIER.text)) ;
-        };
+expressionMethodsTemp[Expression instance]
+	returns[Expression expr] locals[Expression immediateExpr]:
+	(
+		dotOp='.' i = ID
+		{
+		    Identifier methodName = new Identifier($i.text);
+		    setNodePosition( methodName , $i.getLine() , $i.getCharPositionInLine() );
+		    $immediateExpr=new MethodCall($instance,methodName);
+		    setNodePosition( $immediateExpr , $dotOp.getLine() , $dotOp.getCharPositionInLine() );
+		}
+		'(' (
+			e1 = expression {((MethodCall)$immediateExpr).addArg($e1.expr);} (
+				',' e2 = expression {((MethodCall)$immediateExpr).addArg($e2.expr);}
+			)*
+		)? ')'
+		| dotOp='.' ii = ID
+		{
+		    Identifier fieldName = new Identifier( $ii.text );
+		    setNodePosition( fieldName , $ii.getLine() , $ii.getCharPositionInLine() );
+		    $immediateExpr=new FieldCall($instance, fieldName );
+		    setNodePosition( $immediateExpr , $dotOp.getLine() , $dotOp.getCharPositionInLine() );
+		}
+		| leftBrace='[' e3 = expression ']'
+		{
+		    $immediateExpr=new ArrayCall($instance,$e3.expr);
+		    setNodePosition( $immediateExpr , $leftBrace.getLine() , $leftBrace.getCharPositionInLine() );
+		}
+	) mt = expressionMethodsTemp[$immediateExpr]
+	{
+	    $expr=$mt.expr;
+	}
+	|
+	{
+	 $expr=$instance;
+	}
+	;
+expressionOther
+	returns[Expression expr]:
+	n = CONST_NUM
+	{
+	    $expr=new IntValue($n.int);
+	    setNodePosition( $expr , $n.getLine() , $n.getCharPositionInLine() );
+	}
+	| s = CONST_STR
+	{
+	    $expr=new StringValue($s.text);
+	    setNodePosition( $expr , $s.getLine() , $s.getCharPositionInLine() );
+	}
+	| newModifier='new' st = singleType leftBrace='[' size = expression ']'
+	{
+	    $expr=new NewArray($st.sType,$size.expr);
+        setNodePosition( $expr , $newModifier.getLine() , $newModifier.getCharPositionInLine() );
+	}
+	| newModifier='new' i = ID '(' ')'
+	{
+	    Identifier instanceClass = new Identifier( $i.text );
+	    setNodePosition( instanceClass , $i.getLine() , $i.getCharPositionInLine() );
+	    $expr=new NewClassInstance( instanceClass );
+	    setNodePosition( $expr , $newModifier.getLine() , $newModifier.getCharPositionInLine() );
+	}
+	| selfModifier='self'
+	{
+	    $expr=new Self();
+	    setNodePosition( $expr , $selfModifier.getLine() , $selfModifier.getCharPositionInLine() );
+	}
+	| trueModifier='true'
+	{
+	    $expr=new BoolValue(true);
+	    setNodePosition( $expr , $trueModifier.getLine() , $trueModifier.getCharPositionInLine() );
+	}
+	| falseModifier='false'
+	{
+	    $expr=new BoolValue(false);
+	    setNodePosition( $expr , $falseModifier.getLine() , $falseModifier.getCharPositionInLine() );
+	}
+	| i1 = ID
+	{
+	    $expr=new Identifier($i1.text);
+	    setNodePosition( $expr , $i1.getLine() , $i1.getCharPositionInLine() );
+	}
+	| i2 = ID leftBrace='[' e = expression ']'
+	{
+	    Identifier instanceId = new Identifier($i2.text);
+        setNodePosition( instanceId , $i2.getLine() , $i2.getCharPositionInLine() );
+	    $expr = new ArrayCall( instanceId , $e.expr );
+	    setNodePosition( $expr , $leftBrace.getLine() , $leftBrace.getCharPositionInLine() );
+	}
+	| leftPara='(' ee = expression ')'
+	{
+	    $expr = $ee.expr;
+	}
+	| i3 = ID
+	{
+	    Self instance = new Self();
+	    setNodePosition( instance , $i3.getLine() , $i3.getCharPositionInLine() );
+	    Identifier methodName = new Identifier( $i3.text );
+	    setNodePosition( methodName , $i3.getLine() , $i3.getCharPositionInLine() );
+	    $expr=new MethodCall( instance , methodName );
+	    setNodePosition( $expr , $i3.getLine() , $i3.getCharPositionInLine() );
+	} '(' (
+		    e3 = expression { ((MethodCall)$expr).addArg($e3.expr); } (
+			',' e4 = expression { ((MethodCall)$expr).addArg($e4.expr); }
+		  )*
+	)? ')';
 
-arrayOrMethodOrfieldCall
-	returns[Expression e]:
-	o = objectMethod {$e = $o.e;}
-	| f = fieldOrArrayCall {$e = $f.e;}
-	| a = lonelyArrayCall {$e = $a.e;}
-	| na = newArray {$e = $na.e;}
-	| nc = newClassInstance {$e = $nc.e;}
-	| v = constVal {$e = $v.e;}
-	| id = IDENTIFIER {$e = new Identifier($id.text);}
-	| s = SELF {$e = new Self();}
-	| LPARENT pe = expr RPARENT {$e = $pe.e;};
+toorlaType
+	returns[Type mType]:
+	st = singleType {$mType=$st.sType;} (
+		'[' ']' {$mType=new ArrayType($st.sType);}
+	)?;
 
-// Lexer Rules
+singleType
+	returns[SingleType sType]: (
+		'int' {$sType=new IntType();}
+		| 'bool' {$sType=new BoolType();}
+		| 'string' {$sType=new StringType();}
+		| i = ID {$sType=new UserDefinedType(new ClassDeclaration(new Identifier($i.text)));}
+	);
 
-// KEWORDS
+CONST_NUM: [1-9][0-9]* | [0];
 
-IF: 'if';
-ELIF: 'elif';
-ELSE: 'else';
-CLASS: 'class';
-DATA_TYPE: 'int' | 'bool' | 'string';
-INHERITS: 'inherits';
-FIELD: 'field';
-ACCESS_MODIFIER: 'public' | 'private';
-RETURN: 'return';
-RETURNS: 'returns';
-BEGIN: 'begin';
-END: 'end';
-CONTINUE: 'continue';
-BREAK: 'break';
-WHILE: 'while';
-ENTRY: 'entry';
-SELF: 'self';
-NEW: 'new';
-VAR: 'var';
-FUNCTION: 'function';
-PRINT: 'print';
+CONST_STR: '"' ~('\r' | '\n' | '"')* '"';
 
-// OPERATORS
+NL: '\r'? '\n' -> skip;
 
-NOT_EQUAL: '<>';
-GREATER_THAN: '>';
-LESS_THAN: '<';
+ID: [a-zA-Z_][a-zA-Z0-9_]*;
 
-EQUALS: '==';
-ASSIGN: '=';
+COMMENT: '//' (~[\r\n])* -> skip;
 
-NOT: '!';
-AND: '&&';
-OR: '||';
+MULTILINE_COMMENT: '/*' (.)*? '*/' -> skip;
 
-INCREASE: '++';
-DECREASE: '--';
-
-PLUS: '+';
-MINUS: '-';
-MULT: '*';
-DIV: '/';
-MOD: '%';
-
-// SYMBOLS
-
-LPARENT: '(';
-RPARENT: ')';
-DOT: '.';
-
-LBRACKET: '[';
-RBRACKET: ']';
-
-COMMA: ',';
-COLLON: ':';
-SEMICOLLON: ';';
-
-INT_LITERAL: '0' | [1-9][0-9]*;
-STRING_LITERAL: '"' ~["\\]* '"';
-BOOL_LITERAL: 'true' | 'false';
-
-//ID
-
-IDENTIFIER: [a-zA-Z_][A-Za-z0-9_]*;
-//WHITESPACE
-
-WS: ([ \t\n\r] | '//' ~( '\r' | '\n')* | '/*' .*? '*/') -> skip;
+WS: [ \t] -> skip;

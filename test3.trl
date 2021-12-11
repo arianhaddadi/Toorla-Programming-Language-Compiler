@@ -1,0 +1,48 @@
+entry class MainClass:
+    function main() returns int:
+        return new MyClass().myMethod( 1 , true , new int[ 2 ] );
+    end
+
+
+end
+
+
+
+
+class MyClass :
+    function myMethod( a : string , b: bool , c : int[] ) returns int:
+        print( "viva toorla!!!!!!!!!!!!!!!" );
+        var a1 = 3 , a2 = 5 , a3 = 6;
+        var yazdani = new String();
+        var yazdaniBarikbin = 5414151;
+        begin
+            var tehran = 23;
+            begin
+                var tehran = 45;
+                var yes = 4;
+            end
+            var yes = 5;
+        end
+        var yes = 5425018;
+        return 2 * 2 * 3 * 4;
+    end
+
+
+    function myMethod1( a : string , b: bool , c : int[] ) returns int:
+            print( "viva toorla!!!!!!!!!!!!!!!" );
+            var a1 = 3 , a2 = 5 , a3 = 6;
+            var yazdani = new String();
+            var yazdaniBarikbin = 5414151;
+            begin
+                var tehran = 23;
+                begin
+                    var tehran = 45;
+                    var yes = 4;
+                end
+                var yes = 5;
+            end
+            var yes = 5425018;
+            return 2 * 2 * 3 * 4;
+    end
+
+end

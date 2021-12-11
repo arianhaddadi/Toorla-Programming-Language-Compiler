@@ -1,0 +1,33 @@
+class Yazdani inherits Ahmadhossein:
+    field x1 , y1 , z bool;
+
+
+    private function main( a : int ) returns int :
+        return 0;
+    end
+
+
+
+end
+
+
+entry class Ahmadhossein inherits Any1 :
+    field x , y , z int;
+
+    public function main() returns int :
+        return 0;
+    end
+
+
+end
+
+class Any :
+    field x int;
+
+
+end
+
+
+class Any1:
+    field z int;
+end
