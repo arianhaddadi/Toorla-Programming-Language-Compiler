@@ -1,6 +1,5 @@
 package toorla.symbolTable.symbolTableItem;
 
-import toorla.ast.declaration.classDecs.ClassDeclaration;
 import toorla.symbolTable.SymbolTable;
 
 public class ClassSymbolTableItem extends SymbolTableItem {
@@ -8,7 +7,6 @@ public class ClassSymbolTableItem extends SymbolTableItem {
     public static final String classModifier = "class_";
     private SymbolTable symbolTable;
     private SymbolTable parentSymbolTable;
-    private ClassDeclaration classDeclaration = null;
 
     public ClassSymbolTableItem(String name) {
         this.name = name;
@@ -34,13 +32,4 @@ public class ClassSymbolTableItem extends SymbolTableItem {
     public void setParentSymbolTable(SymbolTable symbolTable) {
         this.parentSymbolTable = symbolTable;
     }
-
-    public void setClassDeclaration(ClassDeclaration classDeclaration){
-        this.classDeclaration = classDeclaration;
-    }
-
-    public ClassDeclaration getClassDeclaration() {
-        return classDeclaration;
-    }
 }
-

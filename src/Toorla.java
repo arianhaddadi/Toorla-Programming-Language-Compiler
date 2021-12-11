@@ -11,5 +11,5 @@ public class Toorla {
         CharStream textStream = CharStreams.fromFileName(args[0]);
         ToorlaCompiler compiler = new ToorlaCompiler();
         compiler.compile(textStream);
-}
+    }
 }

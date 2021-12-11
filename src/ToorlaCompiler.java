@@ -2,8 +2,9 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import toorla.ast.Program;
 import toorla.nameAnalyzer.NameAnalyzer;
-import toorla.typeAnalyzer.TypeAnalysisErrorPrinter;
-import toorla.typeAnalyzer.TypeAnalyzer;
+import toorla.typeChecker.TypeChecker;
+import toorla.visitor.ErrorReporter;
+import toorla.CodeGenerator.CodeGenerator;
 
 public class ToorlaCompiler {
     public void compile(CharStream textStream) {
@@ -11,11 +12,17 @@ public class ToorlaCompiler {
         CommonTokenStream tokenStream = new CommonTokenStream(toorlaLexer);
         ToorlaParser toorlaParser = new ToorlaParser(tokenStream);
         Program toorlaASTCode = toorlaParser.program().mProgram;
+        ErrorReporter errorReporter = new ErrorReporter();
         NameAnalyzer nameAnalyzer = new NameAnalyzer(toorlaASTCode);
         nameAnalyzer.analyze();
-        TypeAnalyzer typeanalyzer = new TypeAnalyzer(nameAnalyzer.getClassHierarchy());
-        toorlaASTCode.accept(typeanalyzer);
-        TypeAnalysisErrorPrinter errorer = new TypeAnalysisErrorPrinter();
-        toorlaASTCode.accept(errorer);
+        toorlaASTCode.accept(errorReporter);
+        TypeChecker typeChecker = new TypeChecker(nameAnalyzer.getClassHierarchy());
+        toorlaASTCode.accept(typeChecker);
+        CodeGenerator cgr = new CodeGenerator(nameAnalyzer.getClassHierarchy());
+        toorlaASTCode.accept(cgr);
+//        int numOfErrors = toorlaASTCode.accept( errorReporter );
+//        if( numOfErrors > 0 )
+//            System.exit(1);
+//        System.out.println("No error detected;");
     }
 }
