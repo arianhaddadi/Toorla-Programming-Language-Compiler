@@ -1,2 +1,2 @@
 # Toorla-Programming-Language
-This project is a compiler for an Object-Oriented Programming Language named TOORLA.
+This project is a compiler implementation for an object-oriented programming language named TOORLA. Samples of codes written in Toorla can be found inside the **samples/** folder.
