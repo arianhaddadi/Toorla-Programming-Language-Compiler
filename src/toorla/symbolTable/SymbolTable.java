@@ -1,24 +1,22 @@
-package toorla.symbolTable;
+package toorla.symboltable;
 
-import toorla.symbolTable.exceptions.ItemAlreadyExistsException;
-import toorla.symbolTable.exceptions.ItemNotFoundException;
-import toorla.symbolTable.symbolTableItem.SymbolTableItem;
-import toorla.utilities.stack.Stack;
+import toorla.symboltable.exceptions.ItemAlreadyExistsException;
+import toorla.symboltable.exceptions.ItemNotFoundException;
+import toorla.symboltable.items.SymbolTableItem;
+import toorla.utils.stack.Stack;
 
 import java.util.*;
 
 public class SymbolTable {
     private SymbolTable pre;
-    private Map<String, SymbolTableItem> items;
-
-    // Static members region
+    private final Map<String, SymbolTableItem> items;
 
     private static SymbolTable top;
     public static SymbolTable root;
     private static int mustBeUsedAfterDefCount = 0;
 
-    private static Stack<SymbolTable> stack = new Stack<>();
-    private static Queue<SymbolTable> queue = new LinkedList<>();
+    private final static Stack<SymbolTable> stack = new Stack<>();
+    private final static Queue<SymbolTable> queue = new LinkedList<>();
 
     public static SymbolTable top() {
         return top;
@@ -28,18 +26,15 @@ public class SymbolTable {
         push(queue.remove());
     }
 
-    public static void define()
-    {
+    public static void define() {
         mustBeUsedAfterDefCount++;
     }
 
-    public static int getCountOfDefinedMustBeUsedAfterDefItems()
-    {
+    public static int getCountOfDefinedMustBeUsedAfterDefItems() {
         return mustBeUsedAfterDefCount;
     }
 
-    public static void reset()
-    {
+    public static void reset() {
         mustBeUsedAfterDefCount = 0;
     }
     public static void push(SymbolTable symbolTable) {
@@ -52,8 +47,6 @@ public class SymbolTable {
     public static void pop() {
         top = stack.pop();
     }
-
-    // End of static members region
 
     public SymbolTable() {
         this(null);
@@ -78,11 +71,10 @@ public class SymbolTable {
     public SymbolTableItem getInParentScopes(String key) throws ItemNotFoundException {
         if (pre == null)
             throw new ItemNotFoundException();
-        else
-        {
+        else {
             Set<SymbolTable> visitedSymbolTables = new HashSet<>();
             visitedSymbolTables.add(this);
-            if( this.pre == this )
+            if(this.pre == this)
                 throw new ItemNotFoundException();
             SymbolTable currentSymbolTable = this.pre;
             return getSymbolTableItemInCurrentOrParents(key, visitedSymbolTables, currentSymbolTable);
@@ -91,14 +83,14 @@ public class SymbolTable {
 
     private SymbolTableItem getSymbolTableItemInCurrentOrParents(String key, Set<SymbolTable> visitedSymbolTables, SymbolTable currentSymbolTable) throws ItemNotFoundException {
         do {
-            visitedSymbolTables.add( currentSymbolTable );
+            visitedSymbolTables.add(currentSymbolTable);
             SymbolTableItem value = currentSymbolTable.items.get(key);
-            if( value != null )
-                if( value.getDefinitionNumber() <= SymbolTable.mustBeUsedAfterDefCount)
+            if(value != null)
+                if(value.getDefinitionNumber() <= SymbolTable.mustBeUsedAfterDefCount)
                     return value;
             currentSymbolTable = currentSymbolTable.getPreSymbolTable();
-        } while( currentSymbolTable != null &&
-                !visitedSymbolTables.contains( currentSymbolTable ) );
+        } while(currentSymbolTable != null &&
+                !visitedSymbolTables.contains(currentSymbolTable));
         throw new ItemNotFoundException();
     }
 

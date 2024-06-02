@@ -6,8 +6,7 @@ public class Undefined extends Type {
         return "$Undefined";
     }
     @Override
-    public boolean equals(Type type)
-    {
+    public boolean equals(Type type) {
         return true;
     }
 }

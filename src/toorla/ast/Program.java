@@ -1,13 +1,13 @@
 package toorla.ast;
 
-import toorla.ast.declaration.classDecs.ClassDeclaration;
-import toorla.visitor.IVisitor;
+import toorla.ast.declarations.classes.ClassDeclaration;
+import toorla.visitors.IVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Program extends Tree {
-    private ArrayList<ClassDeclaration> classes = new ArrayList<>();
+    private final ArrayList<ClassDeclaration> classes = new ArrayList<>();
 
     public void addClass(ClassDeclaration classDeclaration) {
         classes.add(classDeclaration);

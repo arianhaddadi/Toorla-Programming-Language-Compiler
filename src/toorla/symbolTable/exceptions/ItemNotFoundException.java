@@ -1,5 +1,4 @@
-package toorla.symbolTable.exceptions;
-
+package toorla.symboltable.exceptions;
 
 public class ItemNotFoundException extends Exception {
 }

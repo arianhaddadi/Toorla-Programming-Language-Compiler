@@ -1,7 +1,7 @@
 package toorla.ast;
 
-import toorla.compileErrorException.CompileErrorException;
-import toorla.visitor.IVisitor;
+import toorla.utils.CompileErrorException;
+import toorla.visitors.IVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,8 +21,8 @@ public abstract class Tree {
 		relatedErrors.add(e);
 	}
 
-	public boolean hasError() {
-		return relatedErrors.size() != 0;
+	public boolean hasErrors() {
+		return !relatedErrors.isEmpty();
 	}
 
 	public abstract <R> R accept(IVisitor<R> visitor);
