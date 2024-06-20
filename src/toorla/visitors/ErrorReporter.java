@@ -19,7 +19,6 @@ import toorla.ast.expressions.value.StringValue;
 import toorla.ast.statements.*;
 import toorla.ast.statements.localvars.LocalVarDef;
 import toorla.ast.statements.localvars.LocalVarsDefinitions;
-import toorla.ast.statements.Return;
 import toorla.utils.CompileErrorException;
 
 import java.util.List;

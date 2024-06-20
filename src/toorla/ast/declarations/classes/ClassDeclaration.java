@@ -14,7 +14,7 @@ public class ClassDeclaration extends Declaration {
     private Identifier name;
     private Identifier parentName;
 
-    private ArrayList<ClassMemberDeclaration> members = new ArrayList<>();
+    private final ArrayList<ClassMemberDeclaration> members = new ArrayList<>();
 
     public ClassDeclaration(Identifier name) {
         this.name = name;

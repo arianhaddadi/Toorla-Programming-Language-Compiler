@@ -8,9 +8,9 @@ import toorla.symboltable.exceptions.ItemAlreadyExistsException;
 import toorla.symboltable.items.ClassSymbolTableItem;
 
 public class ClassRedefinitionException extends CompileErrorException {
-    private ClassDeclaration classDeclaration;
-    private int seenClassesNum;
-    private String oldName;
+    private final ClassDeclaration classDeclaration;
+    private final int seenClassesNum;
+    private final String oldName;
 
     public ClassRedefinitionException(ClassDeclaration classDeclaration, int seenClassesNum) {
         super(String.format("Redefinition of Class %s", classDeclaration.getName().getName())

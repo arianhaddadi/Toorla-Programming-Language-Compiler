@@ -4,7 +4,7 @@ import toorla.ast.expressions.Expression;
 import toorla.visitors.IVisitor;
 
 public class IncStatement extends Statement {
-    private Expression operand;
+    private final Expression operand;
 
     public IncStatement(Expression operand) {
         this.operand = operand;

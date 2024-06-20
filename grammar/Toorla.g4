@@ -11,10 +11,7 @@ grammar Toorla;
 	import toorla.ast.expressions.value.*;
 	import toorla.ast.statements.*;
 	import toorla.ast.statements.localvars.*;
-	import toorla.ast.statements.returnStatement.*;
 	import toorla.types.*;
-	import toorla.types.singleType.*;
-	import toorla.types.arrayType.*;
 	import java.util.List;
 	import java.util.ArrayList;
 }

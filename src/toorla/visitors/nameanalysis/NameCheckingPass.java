@@ -61,13 +61,11 @@ public class NameCheckingPass extends Visitor<Void> implements INameAnalyzingPas
     public Void visit(FieldDeclaration fieldDeclaration) {
         if (!fieldDeclaration.hasErrors())
             try {
-                SymbolTableItem sameFieldInParents = SymbolTable.top().getInParentScopes(
-                        VarSymbolTableItem.var_modifier + fieldDeclaration.getIdentifier().getName());
+                SymbolTable.top().getInParentScopes(VarSymbolTableItem.var_modifier + fieldDeclaration.getIdentifier().getName());
                 FieldRedefinitionException e = new FieldRedefinitionException(
                         fieldDeclaration.getIdentifier().getName(), fieldDeclaration.line, fieldDeclaration.col);
                 fieldDeclaration.addError(e);
-            } catch (ItemNotFoundException ignored) {
-            }
+            } catch (ItemNotFoundException ignored) {}
         return null;
     }
 

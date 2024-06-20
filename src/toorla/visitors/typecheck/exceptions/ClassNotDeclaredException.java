@@ -3,7 +3,8 @@ package toorla.visitors.typecheck.exceptions;
 import toorla.utils.CompileErrorException;
 
 public class ClassNotDeclaredException extends CompileErrorException {
-    private String className;
+    private final String className;
+
     public ClassNotDeclaredException(String className, int line, int col) {
         this.className = className;
         this.atLine = line;

@@ -18,7 +18,6 @@ import toorla.ast.expressions.value.StringValue;
 import toorla.ast.statements.*;
 import toorla.ast.statements.localvars.LocalVarDef;
 import toorla.ast.statements.localvars.LocalVarsDefinitions;
-import toorla.ast.statements.Return;
 import toorla.symboltable.SymbolTable;
 import toorla.symboltable.exceptions.ItemNotFoundException;
 import toorla.symboltable.items.ClassSymbolTableItem;
@@ -66,7 +65,7 @@ public class CodeGenerator extends Visitor<Void> {
     }
 
     private void createFile(String name) {
-        FileWriter newfilewriter = null;
+        FileWriter newfilewriter;
         try {
             newfilewriter = new FileWriter("artifact/" + name + ".j", false);
         } catch (IOException e) {
@@ -130,13 +129,13 @@ public class CodeGenerator extends Visitor<Void> {
         equalsExpr.getRhs().accept(this);
         if ((t1 instanceof IntType || t1 instanceof BoolType)) {
             codes.add("isub");
-            codes.add("ifeq label" + Integer.toString(labelCounter));
+            codes.add("ifeq label" + labelCounter);
             codes.add("iconst_0");
-            codes.add("goto label" + Integer.toString(labelCounter + 1));
-            codes.add("label" + Integer.toString(labelCounter) + ":");
+            codes.add("goto label" + (labelCounter + 1));
+            codes.add("label" + labelCounter + ":");
             codes.add("iconst_1");
             labelCounter += 1;
-            codes.add("label" + Integer.toString(labelCounter) + ":");
+            codes.add("label" + labelCounter + ":");
             labelCounter += 1;
         }
         else if (t1 instanceof UserDefinedType || t1 instanceof StringType) {
@@ -151,13 +150,13 @@ public class CodeGenerator extends Visitor<Void> {
     public Void visit(GreaterThan gtExpr) {
         gtExpr.getLhs().accept(this);
         gtExpr.getRhs().accept(this);
-        codes.add("if_icmpgt label" + Integer.toString(labelCounter));
+        codes.add("if_icmpgt label" + labelCounter);
         codes.add("iconst_0");
-        codes.add("goto label" + Integer.toString(labelCounter+1));
-        codes.add("label" + Integer.toString(labelCounter) + ":");
+        codes.add("goto label" + (labelCounter + 1));
+        codes.add("label" + labelCounter + ":");
         codes.add("iconst_1");
         labelCounter += 1;
-        codes.add("label" + Integer.toString(labelCounter) + ":");
+        codes.add("label" + labelCounter + ":");
         labelCounter += 1;
         return null;
     }
@@ -165,44 +164,44 @@ public class CodeGenerator extends Visitor<Void> {
     public Void visit(LessThan lessThanExpr) {
         lessThanExpr.getLhs().accept(this);
         lessThanExpr.getRhs().accept(this);
-        codes.add("if_icmplt label" + Integer.toString(labelCounter));
+        codes.add("if_icmplt label" + labelCounter);
         codes.add("iconst_0");
-        codes.add("goto label" + Integer.toString(labelCounter+1));
-        codes.add("label" + Integer.toString(labelCounter) + ":");
+        codes.add("goto label" + (labelCounter + 1));
+        codes.add("label" + labelCounter + ":");
         codes.add("iconst_1");
         labelCounter += 1;
-        codes.add("label" + Integer.toString(labelCounter) + ":");
+        codes.add("label" + labelCounter + ":");
         labelCounter += 1;
         return null;
     }
 
     public Void visit(And andExpr) {
         andExpr.getLhs().accept(this);
-        codes.add("ifeq label" + Integer.toString(labelCounter));
+        codes.add("ifeq label" + labelCounter);
         andExpr.getRhs().accept(this);
-        codes.add("ifeq label" + Integer.toString(labelCounter));
+        codes.add("ifeq label" + labelCounter);
         codes.add("iconst_1");
-        codes.add("goto label" + Integer.toString(labelCounter+1));
-        codes.add("label" + Integer.toString(labelCounter) + ":");
+        codes.add("goto label" + (labelCounter + 1));
+        codes.add("label" + labelCounter + ":");
         codes.add("iconst_0");
         labelCounter += 1;
-        codes.add("label" + Integer.toString(labelCounter) + ":");
+        codes.add("label" + labelCounter + ":");
         labelCounter += 1;
         return null;
     }
 
     public Void visit(Or orExpr) {
         orExpr.getLhs().accept(this);
-        codes.add("ifne label" + Integer.toString(labelCounter));
+        codes.add("ifne label" + labelCounter);
         orExpr.getRhs().accept(this);
         orExpr.getRhs().accept(this);
-        codes.add("ifne label" + Integer.toString(labelCounter));
+        codes.add("ifne label" + labelCounter);
         codes.add("iconst_0");
-        codes.add("goto label" + Integer.toString(labelCounter+1));
-        codes.add("label" + Integer.toString(labelCounter) + ":");
+        codes.add("goto label" + (labelCounter + 1));
+        codes.add("label" + labelCounter + ":");
         codes.add("iconst_1");
         labelCounter += 1;
-        codes.add("label" + Integer.toString(labelCounter) + ":");
+        codes.add("label" + labelCounter + ":");
         labelCounter += 1;
         return null;
     }
@@ -216,13 +215,13 @@ public class CodeGenerator extends Visitor<Void> {
 
     public Void visit(Not notExpr) {
         notExpr.getExpr().accept(this);
-        codes.add("ifeq label" + Integer.toString(labelCounter));
+        codes.add("ifeq label" + labelCounter);
         codes.add("iconst_0");
-        codes.add("goto label" + Integer.toString(labelCounter + 1));
-        codes.add("label" + Integer.toString(labelCounter) +":");
+        codes.add("goto label" + (labelCounter + 1));
+        codes.add("label" + labelCounter +":");
         codes.add("iconst_1");
         labelCounter += 1;
-        codes.add("label" + Integer.toString(labelCounter) + ":");
+        codes.add("label" + labelCounter + ":");
         labelCounter += 1;
         return null;
     }
@@ -251,13 +250,13 @@ public class CodeGenerator extends Visitor<Void> {
     public Void visit(Identifier identifier) {
         try {
             SymbolTableItem sti = SymbolTable.top().get("var_" + identifier.getName());
-            if ( (VarSymbolTableItem)sti instanceof LocalVariableSymbolTableItem ) {
+            if (sti instanceof LocalVariableSymbolTableItem) {
                 if (((VarSymbolTableItem)sti).getType() instanceof BoolType || ((VarSymbolTableItem)sti).getType() instanceof IntType) {
-                    codes.add("iload " + Integer.toString(((LocalVariableSymbolTableItem) sti).getIndex()));
+                    codes.add("iload " + ((LocalVariableSymbolTableItem) sti).getIndex());
                 }
                 else if (((VarSymbolTableItem)sti).getType() instanceof StringType || ((VarSymbolTableItem)sti).getType() instanceof UserDefinedType
                             || ((LocalVariableSymbolTableItem) sti).getVarType() instanceof ArrayType) {
-                    codes.add("aload " + Integer.toString(((LocalVariableSymbolTableItem)sti).getIndex()));
+                    codes.add("aload " + ((LocalVariableSymbolTableItem) sti).getIndex());
                 }
             }
             else if (sti instanceof FieldSymbolTableItem) {
@@ -276,7 +275,7 @@ public class CodeGenerator extends Visitor<Void> {
     }
 
     public Void visit(IntValue intValue) {
-        codes.add("bipush " + Integer.toString(intValue.getConstant()));
+        codes.add("bipush " + intValue.getConstant());
         return null;
     }
 
@@ -325,7 +324,7 @@ public class CodeGenerator extends Visitor<Void> {
             if (arrayCall.getInstance() instanceof Identifier) {
                 SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) arrayCall.getInstance()).getName());
                 if (sti instanceof LocalVariableSymbolTableItem) {
-                    codes.add("aload " + Integer.toString(((LocalVariableSymbolTableItem) sti).getIndex()));
+                    codes.add("aload " + ((LocalVariableSymbolTableItem) sti).getIndex());
                 }
                 else if (sti instanceof FieldSymbolTableItem) {
                     codes.add("aload 0");
@@ -358,24 +357,24 @@ public class CodeGenerator extends Visitor<Void> {
         }
         else if (t1 instanceof StringType || t1 instanceof UserDefinedType) {
             codes.add("invokevirtual java/lang/String/equals(Ljava/lang/Object;)Z");
-            codes.add("ifeq label" + Integer.toString(labelCounter));
+            codes.add("ifeq label" + labelCounter);
             codes.add("iconst_0");
-            codes.add("goto label" + Integer.toString(labelCounter + 1));
-            codes.add("label" + Integer.toString(labelCounter) + ":");
+            codes.add("goto label" + (labelCounter + 1));
+            codes.add("label" + labelCounter + ":");
             codes.add("iconst_1");
             labelCounter += 1;
-            codes.add("label" + Integer.toString(labelCounter) + ":");
+            codes.add("label" + labelCounter + ":");
             labelCounter += 1;
         }
         else if (t1 instanceof ArrayType) {
             codes.add("invokestatic java/util/Arrays/equals([I[I)Z");
-            codes.add("ifeq label" + Integer.toString(labelCounter));
+            codes.add("ifeq label" + labelCounter);
             codes.add("iconst_0");
-            codes.add("goto label" + Integer.toString(labelCounter + 1));
-            codes.add("label" + Integer.toString(labelCounter) + ":");
+            codes.add("goto label" + (labelCounter + 1));
+            codes.add("label" + labelCounter + ":");
             codes.add("iconst_1");
             labelCounter += 1;
-            codes.add("label" + Integer.toString(labelCounter) + ":");
+            codes.add("label" + labelCounter + ":");
             labelCounter += 1;
         }
         return null;
@@ -416,7 +415,7 @@ public class CodeGenerator extends Visitor<Void> {
                 assignStat.getRvalue().accept(this);
                 try {
                     SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) assignStat.getLvalue()).getName());
-                    codes.add("astore " + Integer.toString(((LocalVariableSymbolTableItem)sti).getIndex()));
+                    codes.add("astore " + ((LocalVariableSymbolTableItem) sti).getIndex());
                 } catch (ItemNotFoundException e) {
                     e.printStackTrace();
                 }
@@ -425,7 +424,7 @@ public class CodeGenerator extends Visitor<Void> {
                 assignStat.getRvalue().accept(this);
                 try {
                     SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) assignStat.getLvalue()).getName());
-                    codes.add("istore " + Integer.toString(((LocalVariableSymbolTableItem)sti).getIndex()));
+                    codes.add("istore " + ((LocalVariableSymbolTableItem) sti).getIndex());
                 } catch (ItemNotFoundException e) {
                     e.printStackTrace();
                 }
@@ -437,7 +436,7 @@ public class CodeGenerator extends Visitor<Void> {
                     try {
                         SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) ((ArrayCall) assignStat.getLvalue()).getInstance()).getName());
                         if (sti instanceof LocalVariableSymbolTableItem) {
-                            codes.add("aload " + Integer.toString(((LocalVariableSymbolTableItem)sti).getIndex()));
+                            codes.add("aload " + ((LocalVariableSymbolTableItem) sti).getIndex());
 
                         }
                         else if (sti instanceof FieldSymbolTableItem) {
@@ -461,7 +460,7 @@ public class CodeGenerator extends Visitor<Void> {
                     try {
                         SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) ((ArrayCall) assignStat.getLvalue()).getInstance()).getName());
                         if (sti instanceof LocalVariableSymbolTableItem) {
-                            codes.add("aload " + Integer.toString(((LocalVariableSymbolTableItem)sti).getIndex()));
+                            codes.add("aload " + ((LocalVariableSymbolTableItem) sti).getIndex());
 
                         }
                         else if (sti instanceof FieldSymbolTableItem) {
@@ -504,16 +503,16 @@ public class CodeGenerator extends Visitor<Void> {
         int elseLabel = labelCounter, thenLabel = labelCounter + 1;
         labelCounter += 2;
         conditional.getCondition().accept(this);
-        codes.add("ifeq label" + Integer.toString(elseLabel));
+        codes.add("ifeq label" + elseLabel);
         SymbolTable.pushFromQueue();
         conditional.getThenStatement().accept(this);
         SymbolTable.pop();
-        codes.add("goto label" + Integer.toString(thenLabel));
-        codes.add("label" + Integer.toString(elseLabel) + ":");
+        codes.add("goto label" + thenLabel);
+        codes.add("label" + elseLabel + ":");
         SymbolTable.pushFromQueue();
         conditional.getElseStatement().accept(this);
         SymbolTable.pop();
-        codes.add("label" + Integer.toString(thenLabel) +":");
+        codes.add("label" + thenLabel +":");
         return null;
     }
 
@@ -522,15 +521,15 @@ public class CodeGenerator extends Visitor<Void> {
         labelCounter += 3;
         breakLabels.add(loopEndLabel);
         continueLabels.add(conditionLabel);
-        codes.add("goto label" + Integer.toString(conditionLabel));
+        codes.add("goto label" + conditionLabel);
         SymbolTable.pushFromQueue();
-        codes.add("label" + Integer.toString(bodyLabel) + ":");
+        codes.add("label" + bodyLabel + ":");
         whileStat.body.accept(this);
         SymbolTable.pop();
-        codes.add("label" + Integer.toString(conditionLabel) + ":");
+        codes.add("label" + conditionLabel + ":");
         whileStat.expr.accept(this);
-        codes.add("ifne label" + Integer.toString(bodyLabel));
-        codes.add("label" + Integer.toString(loopEndLabel) + ":");
+        codes.add("ifne label" + bodyLabel);
+        codes.add("label" + loopEndLabel + ":");
         continueLabels.remove(continueLabels.size()-1);
         breakLabels.remove(breakLabels.size()-1);
         return null;
@@ -544,12 +543,12 @@ public class CodeGenerator extends Visitor<Void> {
     }
 
     public Void visit(Break breakStat) {
-        codes.add("goto label" + Integer.toString(breakLabels.get(breakLabels.size()-1)));
+        codes.add("goto label" + breakLabels.get(breakLabels.size() - 1));
         return null;
     }
 
     public Void visit(Continue continueStat) {
-        codes.add("goto label" + Integer.toString(continueLabels.get(continueLabels.size()-1)));
+        codes.add("goto label" + continueLabels.get(continueLabels.size() - 1));
         return null;
     }
 
@@ -562,8 +561,8 @@ public class CodeGenerator extends Visitor<Void> {
         try {
             SymbolTableItem si = SymbolTable.top().get("var_" + localVarDef.getLocalVarName().getName());
             Type t = localVarDef.getInitialValue().accept(typeExtractor);
-            if (t instanceof IntType || t instanceof BoolType) codes.add("istore " + Integer.toString(((LocalVariableSymbolTableItem) si).getIndex()));
-            else if (t instanceof UserDefinedType || t instanceof StringType || t instanceof ArrayType) codes.add("astore " + Integer.toString(((LocalVariableSymbolTableItem) si).getIndex()));
+            if (t instanceof IntType || t instanceof BoolType) codes.add("istore " + ((LocalVariableSymbolTableItem) si).getIndex());
+            else if (t instanceof UserDefinedType || t instanceof StringType || t instanceof ArrayType) codes.add("astore " + ((LocalVariableSymbolTableItem) si).getIndex());
         } catch (ItemNotFoundException e) {
             e.printStackTrace();
         }
@@ -577,7 +576,7 @@ public class CodeGenerator extends Visitor<Void> {
             codes.add("iconst_1");
             codes.add("iadd");
             Type tt = ((FieldCall) incStatement.getOperand()).getInstance().accept(typeExtractor);
-            Type tt2 = ((FieldCall) incStatement.getOperand()).accept(typeExtractor);
+            Type tt2 = incStatement.getOperand().accept(typeExtractor);
             codes.add("putfield a" + ((UserDefinedType)tt).getClassDeclaration().getName().getName() + "/" + ((FieldCall) incStatement.getOperand()).getField().getName() + " " + getJasminType(tt2));
         }
         else if(incStatement.getOperand() instanceof Identifier){
@@ -591,7 +590,7 @@ public class CodeGenerator extends Visitor<Void> {
                     codes.add("putfield a" + typeExtractor.currentClass.getName().getName() + "/" + ((Identifier) incStatement.getOperand()).getName() + " " + getJasminType(((FieldSymbolTableItem) sti).getFieldType()));
                 }
                 else if(sti instanceof LocalVariableSymbolTableItem) {
-                    codes.add("iinc " + Integer.toString(((LocalVariableSymbolTableItem)sti).getIndex()) + " 1");
+                    codes.add("iinc " + ((LocalVariableSymbolTableItem) sti).getIndex() + " 1");
 
                 }
             } catch (ItemNotFoundException e) {
@@ -616,7 +615,7 @@ public class CodeGenerator extends Visitor<Void> {
             codes.add("iconst_1");
             codes.add("isub");
             Type tt = ((FieldCall) decStatement.getOperand()).getInstance().accept(typeExtractor);
-            Type tt2 = ((FieldCall) decStatement.getOperand()).accept(typeExtractor);
+            Type tt2 = decStatement.getOperand().accept(typeExtractor);
             codes.add("putfield a" + ((UserDefinedType)tt).getClassDeclaration().getName().getName() + "/" + ((FieldCall) decStatement.getOperand()).getField().getName() + " " + getJasminType(tt2));
         }
         else if(decStatement.getOperand() instanceof Identifier){
@@ -630,7 +629,7 @@ public class CodeGenerator extends Visitor<Void> {
                     codes.add("putfield a" + typeExtractor.currentClass.getName().getName() + "/" + ((Identifier) decStatement.getOperand()).getName() + " " + getJasminType(((FieldSymbolTableItem) sti).getFieldType()));
                 }
                 else if(sti instanceof LocalVariableSymbolTableItem) {
-                    codes.add("iinc " + Integer.toString(((LocalVariableSymbolTableItem)sti).getIndex()) + " -1");
+                    codes.add("iinc " + ((LocalVariableSymbolTableItem) sti).getIndex() + " -1");
 
                 }
             } catch (ItemNotFoundException e) {

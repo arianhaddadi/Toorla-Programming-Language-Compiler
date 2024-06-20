@@ -11,10 +11,10 @@ import java.util.ArrayList;
 
 public class MethodDeclaration extends Declaration implements ClassMemberDeclaration {
     private Type returnType;
-    private Identifier name;
+    private final Identifier name;
     private AccessModifier accessModifier;
-    private ArrayList<ParameterDeclaration> args = new ArrayList<>();
-    private ArrayList<Statement> body = new ArrayList<>();
+    private final ArrayList<ParameterDeclaration> args = new ArrayList<>();
+    private final ArrayList<Statement> body = new ArrayList<>();
 
     public MethodDeclaration(Identifier name) {
         this.name = name;

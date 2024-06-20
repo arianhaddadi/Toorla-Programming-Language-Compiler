@@ -4,9 +4,9 @@ import toorla.ast.expressions.Expression;
 import toorla.visitors.IVisitor;
 
 public class Conditional extends Statement {
-    private Expression condition;
-    private Statement thenStmt;
-    private Statement elseStmt;
+    private final Expression condition;
+    private final Statement thenStmt;
+    private final Statement elseStmt;
 
     public Conditional(Expression condition, Statement thenStmt) {
         this.condition = condition;

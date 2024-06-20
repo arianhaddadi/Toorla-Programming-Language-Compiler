@@ -8,7 +8,7 @@ public class Stack<E> {
 
     public Stack() {
         top = -1;
-        elements = new ArrayList<E>();
+        elements = new ArrayList<>();
     }
 
     public void push(E pushValue) {

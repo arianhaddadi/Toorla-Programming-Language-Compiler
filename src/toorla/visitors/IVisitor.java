@@ -14,9 +14,7 @@ import toorla.ast.expressions.value.BoolValue;
 import toorla.ast.expressions.value.IntValue;
 import toorla.ast.expressions.value.StringValue;
 import toorla.ast.statements.*;
-import toorla.ast.statements.localvars.LocalVarDef;
-import toorla.ast.statements.localvars.LocalVarsDefinitions;
-import toorla.ast.statements.Return;
+import toorla.ast.statements.localvars.*;
 
 public interface IVisitor<R> {
 	// Expression

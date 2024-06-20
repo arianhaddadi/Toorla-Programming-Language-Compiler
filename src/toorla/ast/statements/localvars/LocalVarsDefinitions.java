@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LocalVarsDefinitions extends Statement {
-    private List<LocalVarDef> definitions;
+    private final List<LocalVarDef> definitions;
 
     public LocalVarsDefinitions() {
         definitions = new ArrayList<>();

@@ -4,7 +4,7 @@ import toorla.ast.expressions.Expression;
 import toorla.visitors.IVisitor;
 
 public class Return extends Statement {
-    private Expression returnedExpr;
+    private final Expression returnedExpr;
 
     public Return(Expression returnedExpr) {
         this.returnedExpr = returnedExpr;

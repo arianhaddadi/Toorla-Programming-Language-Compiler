@@ -5,6 +5,7 @@ import toorla.visitors.nameanalysis.NameAnalyzer;
 import toorla.visitors.typecheck.TypeChecker;
 import toorla.visitors.ErrorReporter;
 import toorla.visitors.codegen.CodeGenerator;
+import toorla.lexer_parser.*;
 
 
 public class ToorlaCompiler {

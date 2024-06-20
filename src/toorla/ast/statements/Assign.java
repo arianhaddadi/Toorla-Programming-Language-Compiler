@@ -4,8 +4,8 @@ import toorla.ast.expressions.Expression;
 import toorla.visitors.IVisitor;
 
 public class Assign extends Statement {
-	private Expression lvalue;
-	private Expression rvalue;
+	private final Expression lvalue;
+	private final Expression rvalue;
 
 	public Assign(Expression lvalue, Expression rvalue) {
 		this.lvalue = lvalue;

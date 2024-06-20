@@ -4,7 +4,7 @@ import toorla.ast.expressions.Expression;
 import toorla.visitors.IVisitor;
 
 public class PrintLine extends Statement {
-	private Expression arg;
+	private final Expression arg;
 
 	public PrintLine(Expression arg) {
 		this.arg = arg;

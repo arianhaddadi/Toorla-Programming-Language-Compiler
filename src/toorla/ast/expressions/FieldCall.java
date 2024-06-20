@@ -3,8 +3,8 @@ package toorla.ast.expressions;
 import toorla.visitors.IVisitor;
 
 public class FieldCall extends Expression {
-    private Expression instance;
-    private Identifier field;
+    private final Expression instance;
+    private final Identifier field;
 
     public FieldCall(Expression instance, Identifier field) {
         this.instance = instance;

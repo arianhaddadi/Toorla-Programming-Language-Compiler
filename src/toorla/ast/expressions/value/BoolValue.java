@@ -9,7 +9,6 @@ public class BoolValue extends Value {
 
     public BoolValue(boolean constant) {
         this.constant = constant;
-
     }
 
     public boolean isConstant() {

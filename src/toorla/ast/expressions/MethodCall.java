@@ -13,7 +13,7 @@ public class MethodCall extends Expression {
         this.methodName = methodName;
     }
 
-    private ArrayList<Expression> args = new ArrayList<>();
+    private final ArrayList<Expression> args = new ArrayList<>();
 
     public Expression getInstance() {
         return instance;

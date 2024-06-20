@@ -3,8 +3,8 @@ package toorla.ast.expressions;
 import toorla.visitors.IVisitor;
 
 public class ArrayCall extends Expression {
-    private Expression instance;
-    private Expression index;
+    private final Expression instance;
+    private final Expression index;
 
     public ArrayCall(Expression instance, Expression index) {
         this.instance = instance;
