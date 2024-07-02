@@ -1,9 +1,7 @@
 package toorla.ast.declarations.classes;
 
 import toorla.ast.declarations.Declaration;
-import toorla.ast.declarations.classes.classmembers.ClassMemberDeclaration;
-import toorla.ast.declarations.classes.classmembers.FieldDeclaration;
-import toorla.ast.declarations.classes.classmembers.MethodDeclaration;
+import toorla.ast.declarations.classes.classmembers.*;
 import toorla.ast.expressions.Identifier;
 import toorla.visitors.IVisitor;
 
@@ -18,13 +16,11 @@ public class ClassDeclaration extends Declaration {
 
     public ClassDeclaration(Identifier name) {
         this.name = name;
-
     }
 
     public ClassDeclaration(Identifier name, Identifier parentName) {
         this.name = name;
         this.parentName = parentName;
-
     }
 
     public Identifier getName() {

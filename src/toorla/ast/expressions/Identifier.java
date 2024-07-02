@@ -19,10 +19,12 @@ public class Identifier extends Expression {
 
     @Override
     public String toString() {
-        if (name != null)
+        if (name != null) {
             return "(Identifier," + name + ")";
-        else
+        }
+        else {
             return "(Identifier,Dummy)";
+        }
     }
 
     @Override

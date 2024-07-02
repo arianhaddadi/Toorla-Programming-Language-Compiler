@@ -40,6 +40,7 @@ public class ErrorReporter extends Visitor<Integer> {
         }
         return numOfErrors;
     }
+
     private Integer report(UnaryExpression unaryExpression) {
         List<CompileErrorException> errors = unaryExpression.flushErrors();
         int numOfErrors = errors.size();
@@ -131,6 +132,7 @@ public class ErrorReporter extends Visitor<Integer> {
         }
         return numOfErrors;
     }
+
     public Integer visit(Plus plusExpr) {
         return report(plusExpr);
     }

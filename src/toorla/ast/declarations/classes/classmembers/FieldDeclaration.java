@@ -30,9 +30,6 @@ public class FieldDeclaration extends TypedVariableDeclaration implements ClassM
         return accessModifier;
     }
 
-    /**
-     * @param accessModifier the accessModifier to set
-     */
     public void setAccessModifier(AccessModifier accessModifier) {
         this.accessModifier = accessModifier;
     }
