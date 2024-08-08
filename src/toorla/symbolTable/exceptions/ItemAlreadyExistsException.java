@@ -1,4 +1,3 @@
 package toorla.symboltable.exceptions;
 
-public class ItemAlreadyExistsException extends Exception {
-}
+public class ItemAlreadyExistsException extends Exception {}

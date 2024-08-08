@@ -10,11 +10,11 @@ import toorla.visitors.IVisitor;
 import java.util.ArrayList;
 
 public class MethodDeclaration extends Declaration implements ClassMemberDeclaration {
-    private Type returnType;
     private final Identifier name;
-    private AccessModifier accessModifier;
     private final ArrayList<ParameterDeclaration> args = new ArrayList<>();
     private final ArrayList<Statement> body = new ArrayList<>();
+    private Type returnType;
+    private AccessModifier accessModifier;
 
     public MethodDeclaration(Identifier name) {
         this.name = name;
@@ -29,12 +29,12 @@ public class MethodDeclaration extends Declaration implements ClassMemberDeclara
         this.returnType = returnType;
     }
 
-    public void setAccessModifier(AccessModifier modifier) {
-        this.accessModifier = modifier;
-    }
-
     public AccessModifier getAccessModifier() {
         return this.accessModifier;
+    }
+
+    public void setAccessModifier(AccessModifier modifier) {
+        this.accessModifier = modifier;
     }
 
     public Identifier getName() {

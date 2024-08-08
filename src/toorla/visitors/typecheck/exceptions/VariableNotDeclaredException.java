@@ -13,7 +13,8 @@ public class VariableNotDeclaredException extends CompileErrorException {
 
     @Override
     public String toString() {
-        return String.format("Error:Line:%d:Variable %s " +
-                        "is not declared yet in this Scope;", atLine, varName);
+        return String.format(
+                "Error:Line:%d:Variable %s " + "is not declared yet in this Scope;",
+                atLine, varName);
     }
 }

@@ -1,6 +1,5 @@
 package toorla.types;
 
-
 public class IntType extends SingleType {
     @Override
     public String toString() {

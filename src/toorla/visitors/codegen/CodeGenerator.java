@@ -26,42 +26,44 @@ import toorla.symboltable.items.SymbolTableItem;
 import toorla.symboltable.items.variables.FieldSymbolTableItem;
 import toorla.symboltable.items.variables.LocalVariableSymbolTableItem;
 import toorla.symboltable.items.variables.VarSymbolTableItem;
-import toorla.visitors.typecheck.ExpressionTypeExtractor;
-import toorla.types.Type;
-import toorla.types.ArrayType;
-import toorla.types.BoolType;
-import toorla.types.IntType;
-import toorla.types.StringType;
-import toorla.types.UserDefinedType;
+import toorla.types.*;
 import toorla.utils.graph.Graph;
 import toorla.visitors.Visitor;
+import toorla.visitors.typecheck.ExpressionTypeExtractor;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-
 import java.util.ArrayList;
 
 public class CodeGenerator extends Visitor<Void> {
     private final ArrayList<String> codes = new ArrayList<>();
-    private int labelCounter = 0;
     private final ArrayList<Integer> breakLabels = new ArrayList<>();
     private final ArrayList<Integer> continueLabels = new ArrayList<>();
-    private Type curType;
     private final ExpressionTypeExtractor typeExtractor;
     public EntryClassDeclaration entryClassDecl;
     public SymbolTable entryclassSymbolTable;
+    private int labelCounter = 0;
+    private Type curType;
 
     public CodeGenerator(Graph<String> classHierarchy) {
         typeExtractor = new ExpressionTypeExtractor(classHierarchy);
     }
 
     private String getJasminType(Type t) {
-        if (t instanceof IntType) return "I";
-        if (t instanceof StringType) return "Ljava/lang/String;";
-        if (t instanceof BoolType) return "Z";
-        if (t instanceof ArrayType) return "[" + getJasminType(((ArrayType) t).getSingleType());
-        return "La" + ((UserDefinedType) t).getClassDeclaration().getName().getName() +";";
+        if (t instanceof IntType) {
+            return "I";
+        }
+        if (t instanceof StringType) {
+            return "Ljava/lang/String;";
+        }
+        if (t instanceof BoolType) {
+            return "Z";
+        }
+        if (t instanceof ArrayType) {
+            return "[" + getJasminType(((ArrayType) t).getSingleType());
+        }
+        return "La" + ((UserDefinedType) t).getClassDeclaration().getName().getName() + ";";
     }
 
     private void createFile(String name) {
@@ -137,14 +139,12 @@ public class CodeGenerator extends Visitor<Void> {
             labelCounter += 1;
             codes.add("label" + labelCounter + ":");
             labelCounter += 1;
-        }
-        else if (t1 instanceof UserDefinedType || t1 instanceof StringType) {
-            codes.add("invokevirtual java/lang/String/equals(Ljava/lang/Object;)Z");
-        }
-        else if (t1 instanceof ArrayType) {
+        } else if (t1 instanceof UserDefinedType || t1 instanceof StringType) {
+            codes.add("invokevirtual java/lang/String/equals" + "(Ljava/lang" + "/Object;)Z");
+        } else if (t1 instanceof ArrayType) {
             codes.add("invokestatic java/util/Arrays/equals([I[I)Z");
         }
-         return null;
+        return null;
     }
 
     public Void visit(GreaterThan gtExpr) {
@@ -218,7 +218,7 @@ public class CodeGenerator extends Visitor<Void> {
         codes.add("ifeq label" + labelCounter);
         codes.add("iconst_0");
         codes.add("goto label" + (labelCounter + 1));
-        codes.add("label" + labelCounter +":");
+        codes.add("label" + labelCounter + ":");
         codes.add("iconst_1");
         labelCounter += 1;
         codes.add("label" + labelCounter + ":");
@@ -233,10 +233,24 @@ public class CodeGenerator extends Visitor<Void> {
         }
         Type t1 = methodCall.getInstance().accept(typeExtractor);
         try {
-            SymbolTable st =((ClassSymbolTableItem) SymbolTable.top().get("class_" + ((UserDefinedType)t1).getClassDeclaration().getName().getName())).getSymbolTable();
+            SymbolTable st =
+                    ((ClassSymbolTableItem)
+                                    SymbolTable.top()
+                                            .get(
+                                                    "class_"
+                                                            + ((UserDefinedType) t1)
+                                                                    .getClassDeclaration()
+                                                                    .getName()
+                                                                    .getName()))
+                            .getSymbolTable();
             SymbolTableItem sti = st.get("method_" + methodCall.getMethodName().getName());
-            String temp = "invokevirtual a" + ((UserDefinedType)t1).getClassDeclaration().getName().getName() + "/" + methodCall.getMethodName().getName() +"(";
-            for (Type q: ((MethodSymbolTableItem)sti).getArgumentsTypes()) {
+            String temp =
+                    "invokevirtual a"
+                            + ((UserDefinedType) t1).getClassDeclaration().getName().getName()
+                            + "/"
+                            + methodCall.getMethodName().getName()
+                            + "(";
+            for (Type q : ((MethodSymbolTableItem) sti).getArgumentsTypes()) {
                 temp += getJasminType(q);
             }
             temp += ")" + getJasminType(((MethodSymbolTableItem) sti).getReturnType());
@@ -251,17 +265,23 @@ public class CodeGenerator extends Visitor<Void> {
         try {
             SymbolTableItem sti = SymbolTable.top().get("var_" + identifier.getName());
             if (sti instanceof LocalVariableSymbolTableItem) {
-                if (((VarSymbolTableItem)sti).getType() instanceof BoolType || ((VarSymbolTableItem)sti).getType() instanceof IntType) {
+                if (((VarSymbolTableItem) sti).getType() instanceof BoolType
+                        || ((VarSymbolTableItem) sti).getType() instanceof IntType) {
                     codes.add("iload " + ((LocalVariableSymbolTableItem) sti).getIndex());
-                }
-                else if (((VarSymbolTableItem)sti).getType() instanceof StringType || ((VarSymbolTableItem)sti).getType() instanceof UserDefinedType
-                            || ((LocalVariableSymbolTableItem) sti).getVarType() instanceof ArrayType) {
+                } else if (((VarSymbolTableItem) sti).getType() instanceof StringType
+                        || ((VarSymbolTableItem) sti).getType() instanceof UserDefinedType
+                        || ((LocalVariableSymbolTableItem) sti).getVarType() instanceof ArrayType) {
                     codes.add("aload " + ((LocalVariableSymbolTableItem) sti).getIndex());
                 }
-            }
-            else if (sti instanceof FieldSymbolTableItem) {
+            } else if (sti instanceof FieldSymbolTableItem) {
                 codes.add("aload 0");
-                codes.add("getfield a" + typeExtractor.currentClass.getName().getName() + "/" + sti.getName() + " " + getJasminType(((FieldSymbolTableItem) sti).getFieldType()));
+                codes.add(
+                        "getfield a"
+                                + typeExtractor.currentClass.getName().getName()
+                                + "/"
+                                + sti.getName()
+                                + " "
+                                + getJasminType(((FieldSymbolTableItem) sti).getFieldType()));
             }
         } catch (ItemNotFoundException e) {
             e.printStackTrace();
@@ -281,15 +301,27 @@ public class CodeGenerator extends Visitor<Void> {
 
     public Void visit(NewArray newArray) {
         newArray.getLength().accept(this);
-        if (newArray.getType() instanceof IntType || newArray.getType() instanceof BoolType) codes.add("newarray int");
-        else if(newArray.getType() instanceof StringType) codes.add("anewarray java/lang/String");
-        else if(newArray.getType() instanceof UserDefinedType) codes.add("anewarray a" + ((UserDefinedType)newArray.getType()).getClassDeclaration().getName().getName());
+        if (newArray.getType() instanceof IntType || newArray.getType() instanceof BoolType) {
+            codes.add("newarray int");
+        } else if (newArray.getType() instanceof StringType) {
+            codes.add("anewarray java/lang/String");
+        } else if (newArray.getType() instanceof UserDefinedType) {
+            codes.add(
+                    "anewarray a"
+                            + ((UserDefinedType) newArray.getType())
+                                    .getClassDeclaration()
+                                    .getName()
+                                    .getName());
+        }
         return null;
     }
 
     public Void visit(BoolValue booleanValue) {
-        if (booleanValue.isConstant()) codes.add("iconst_1");
-        else codes.add("iconst_0");
+        if (booleanValue.isConstant()) {
+            codes.add("iconst_1");
+        } else {
+            codes.add("iconst_0");
+        }
         return null;
     }
 
@@ -310,9 +342,14 @@ public class CodeGenerator extends Visitor<Void> {
         Type t = fieldCall.getInstance().accept(typeExtractor);
         if (!(t instanceof ArrayType)) {
             Type t2 = fieldCall.accept(typeExtractor);
-            codes.add("getfield a" + ((UserDefinedType)t).getClassDeclaration().getName().getName() + "/" + fieldCall.getField().getName() + " " + getJasminType(t2));
-        }
-        else {
+            codes.add(
+                    "getfield a"
+                            + ((UserDefinedType) t).getClassDeclaration().getName().getName()
+                            + "/"
+                            + fieldCall.getField().getName()
+                            + " "
+                            + getJasminType(t2));
+        } else {
             codes.add("arraylength");
         }
         return null;
@@ -322,24 +359,29 @@ public class CodeGenerator extends Visitor<Void> {
         Type type = arrayCall.accept(typeExtractor);
         try {
             if (arrayCall.getInstance() instanceof Identifier) {
-                SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) arrayCall.getInstance()).getName());
+                SymbolTableItem sti =
+                        SymbolTable.top()
+                                .get("var_" + ((Identifier) arrayCall.getInstance()).getName());
                 if (sti instanceof LocalVariableSymbolTableItem) {
                     codes.add("aload " + ((LocalVariableSymbolTableItem) sti).getIndex());
-                }
-                else if (sti instanceof FieldSymbolTableItem) {
+                } else if (sti instanceof FieldSymbolTableItem) {
                     codes.add("aload 0");
                     Type ttt = arrayCall.accept(typeExtractor);
-                    codes.add("getfield a" + typeExtractor.currentClass.getName().getName() + "/" + ((Identifier) arrayCall.getInstance()).getName() + " [" + getJasminType(ttt));
+                    codes.add(
+                            "getfield a"
+                                    + typeExtractor.currentClass.getName().getName()
+                                    + "/"
+                                    + ((Identifier) arrayCall.getInstance()).getName()
+                                    + " ["
+                                    + getJasminType(ttt));
                 }
-            }
-            else if(arrayCall.getInstance() instanceof FieldCall) {
+            } else if (arrayCall.getInstance() instanceof FieldCall) {
                 arrayCall.getInstance().accept(this);
             }
             arrayCall.getIndex().accept(this);
             if (type instanceof IntType || type instanceof BoolType) {
                 codes.add("iaload");
-            }
-            else if (type instanceof StringType || type instanceof UserDefinedType) {
+            } else if (type instanceof StringType || type instanceof UserDefinedType) {
                 codes.add("aaload");
             }
         } catch (ItemNotFoundException e) {
@@ -354,9 +396,8 @@ public class CodeGenerator extends Visitor<Void> {
         notEquals.getRhs().accept(this);
         if ((t1 instanceof IntType || t1 instanceof BoolType)) {
             codes.add("isub");
-        }
-        else if (t1 instanceof StringType || t1 instanceof UserDefinedType) {
-            codes.add("invokevirtual java/lang/String/equals(Ljava/lang/Object;)Z");
+        } else if (t1 instanceof StringType || t1 instanceof UserDefinedType) {
+            codes.add("invokevirtual java/lang/String/equals" + "(Ljava/lang" + "/Object;)Z");
             codes.add("ifeq label" + labelCounter);
             codes.add("iconst_0");
             codes.add("goto label" + (labelCounter + 1));
@@ -365,8 +406,7 @@ public class CodeGenerator extends Visitor<Void> {
             labelCounter += 1;
             codes.add("label" + labelCounter + ":");
             labelCounter += 1;
-        }
-        else if (t1 instanceof ArrayType) {
+        } else if (t1 instanceof ArrayType) {
             codes.add("invokestatic java/util/Arrays/equals([I[I)Z");
             codes.add("ifeq label" + labelCounter);
             codes.add("iconst_0");
@@ -386,11 +426,13 @@ public class CodeGenerator extends Visitor<Void> {
         printStat.getArg().accept(this);
         Type type = printStat.getArg().accept(typeExtractor);
         if (type instanceof ArrayType) {
-            codes.add("invokestatic java/util/Arrays/toString([" +
-                    getJasminType(((ArrayType) type).getSingleType()) +  ")Ljava/lang/String;");
-            codes.add("invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V");
-        }
-        else {
+            codes.add(
+                    "invokestatic java/util/Arrays/toString(["
+                            + getJasminType(((ArrayType) type).getSingleType())
+                            + ")"
+                            + "Ljava/lang/String;");
+            codes.add("invokevirtual java/io/PrintStream/println" + "(Ljava" + "/lang/String;)V");
+        } else {
             codes.add("invokevirtual java/io/PrintStream/println(" + getJasminType(type) + ")V");
         }
         return null;
@@ -400,91 +442,148 @@ public class CodeGenerator extends Visitor<Void> {
         Type t2 = assignStat.getRvalue().accept(typeExtractor);
         if (assignStat.getLvalue() instanceof Identifier) {
             try {
-                SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) assignStat.getLvalue()).getName());
+                SymbolTableItem sti =
+                        SymbolTable.top()
+                                .get("var_" + ((Identifier) assignStat.getLvalue()).getName());
                 if (sti instanceof FieldSymbolTableItem) {
                     codes.add("aload 0");
                     assignStat.getRvalue().accept(this);
-                    codes.add("putfield a" + typeExtractor.currentClass.getName().getName() + "/" + sti.getName() + " " + getJasminType(((FieldSymbolTableItem) sti).getFieldType()));
+                    codes.add(
+                            "putfield a"
+                                    + typeExtractor.currentClass.getName().getName()
+                                    + "/"
+                                    + sti.getName()
+                                    + " "
+                                    + getJasminType(((FieldSymbolTableItem) sti).getFieldType()));
                     return null;
                 }
             } catch (ItemNotFoundException e) {
                 e.printStackTrace();
             }
 
-            if (t2 instanceof StringType || t2 instanceof UserDefinedType || t2 instanceof ArrayType) {
+            if (t2 instanceof StringType
+                    || t2 instanceof UserDefinedType
+                    || t2 instanceof ArrayType) {
                 assignStat.getRvalue().accept(this);
                 try {
-                    SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) assignStat.getLvalue()).getName());
+                    SymbolTableItem sti =
+                            SymbolTable.top()
+                                    .get("var_" + ((Identifier) assignStat.getLvalue()).getName());
                     codes.add("astore " + ((LocalVariableSymbolTableItem) sti).getIndex());
                 } catch (ItemNotFoundException e) {
                     e.printStackTrace();
                 }
-            }
-            else if (t2 instanceof IntType || t2 instanceof BoolType) {
+            } else if (t2 instanceof IntType || t2 instanceof BoolType) {
                 assignStat.getRvalue().accept(this);
                 try {
-                    SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) assignStat.getLvalue()).getName());
+                    SymbolTableItem sti =
+                            SymbolTable.top()
+                                    .get("var_" + ((Identifier) assignStat.getLvalue()).getName());
                     codes.add("istore " + ((LocalVariableSymbolTableItem) sti).getIndex());
                 } catch (ItemNotFoundException e) {
                     e.printStackTrace();
                 }
             }
-        }
-        else if (assignStat.getLvalue() instanceof ArrayCall) {
+        } else if (assignStat.getLvalue() instanceof ArrayCall) {
             if (t2 instanceof StringType || t2 instanceof UserDefinedType) {
                 if (((ArrayCall) assignStat.getLvalue()).getInstance() instanceof Identifier) {
                     try {
-                        SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) ((ArrayCall) assignStat.getLvalue()).getInstance()).getName());
+                        SymbolTableItem sti =
+                                SymbolTable.top()
+                                        .get(
+                                                "var_"
+                                                        + ((Identifier)
+                                                                        ((ArrayCall)
+                                                                                        assignStat
+                                                                                                .getLvalue())
+                                                                                .getInstance())
+                                                                .getName());
                         if (sti instanceof LocalVariableSymbolTableItem) {
                             codes.add("aload " + ((LocalVariableSymbolTableItem) sti).getIndex());
 
-                        }
-                        else if (sti instanceof FieldSymbolTableItem) {
+                        } else if (sti instanceof FieldSymbolTableItem) {
                             codes.add("aload 0");
-                            Type ttt = ((ArrayCall) assignStat.getLvalue()).getInstance().accept(typeExtractor);
-                            codes.add("getfield a" + typeExtractor.currentClass.getName().getName() + "/" + ((Identifier) ((ArrayCall) assignStat.getLvalue()).getInstance()).getName() + " " + getJasminType(ttt));
+                            Type ttt =
+                                    ((ArrayCall) assignStat.getLvalue())
+                                            .getInstance()
+                                            .accept(typeExtractor);
+                            codes.add(
+                                    "getfield a"
+                                            + typeExtractor.currentClass.getName().getName()
+                                            + "/"
+                                            + ((Identifier)
+                                                            ((ArrayCall) assignStat.getLvalue())
+                                                                    .getInstance())
+                                                    .getName()
+                                            + " "
+                                            + getJasminType(ttt));
                         }
                     } catch (ItemNotFoundException e) {
                         e.printStackTrace();
                     }
-                }
-                else if (((ArrayCall) assignStat.getLvalue()).getInstance() instanceof FieldCall) {
+                } else if (((ArrayCall) assignStat.getLvalue()).getInstance()
+                        instanceof FieldCall) {
                     ((ArrayCall) assignStat.getLvalue()).getInstance().accept(this);
                 }
                 ((ArrayCall) assignStat.getLvalue()).getIndex().accept(this);
                 assignStat.getRvalue().accept(this);
                 codes.add("aastore");
-            }
-            else if (t2 instanceof IntType || t2 instanceof BoolType) {
+            } else if (t2 instanceof IntType || t2 instanceof BoolType) {
                 if (((ArrayCall) assignStat.getLvalue()).getInstance() instanceof Identifier) {
                     try {
-                        SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) ((ArrayCall) assignStat.getLvalue()).getInstance()).getName());
+                        SymbolTableItem sti =
+                                SymbolTable.top()
+                                        .get(
+                                                "var_"
+                                                        + ((Identifier)
+                                                                        ((ArrayCall)
+                                                                                        assignStat
+                                                                                                .getLvalue())
+                                                                                .getInstance())
+                                                                .getName());
                         if (sti instanceof LocalVariableSymbolTableItem) {
                             codes.add("aload " + ((LocalVariableSymbolTableItem) sti).getIndex());
 
-                        }
-                        else if (sti instanceof FieldSymbolTableItem) {
+                        } else if (sti instanceof FieldSymbolTableItem) {
                             codes.add("aload 0");
-                            Type ttt = ((ArrayCall) assignStat.getLvalue()).getInstance().accept(typeExtractor);
-                            codes.add("getfield a" + typeExtractor.currentClass.getName().getName() + "/" + ((Identifier) ((ArrayCall) assignStat.getLvalue()).getInstance()).getName() + " " + getJasminType(ttt));
+                            Type ttt =
+                                    ((ArrayCall) assignStat.getLvalue())
+                                            .getInstance()
+                                            .accept(typeExtractor);
+                            codes.add(
+                                    "getfield a"
+                                            + typeExtractor.currentClass.getName().getName()
+                                            + "/"
+                                            + ((Identifier)
+                                                            ((ArrayCall) assignStat.getLvalue())
+                                                                    .getInstance())
+                                                    .getName()
+                                            + " "
+                                            + getJasminType(ttt));
                         }
                     } catch (ItemNotFoundException e) {
                         e.printStackTrace();
                     }
-                }
-                else if (((ArrayCall) assignStat.getLvalue()).getInstance() instanceof FieldCall) {
+                } else if (((ArrayCall) assignStat.getLvalue()).getInstance()
+                        instanceof FieldCall) {
                     ((ArrayCall) assignStat.getLvalue()).getInstance().accept(this);
                 }
                 ((ArrayCall) assignStat.getLvalue()).getIndex().accept(this);
                 assignStat.getRvalue().accept(this);
                 codes.add("iastore");
             }
-        }
-        else if (assignStat.getLvalue() instanceof FieldCall) {
+        } else if (assignStat.getLvalue() instanceof FieldCall) {
             ((FieldCall) assignStat.getLvalue()).getInstance().accept(this);
             assignStat.getRvalue().accept(this);
             Type tt = ((FieldCall) assignStat.getLvalue()).getInstance().accept(typeExtractor);
-            codes.add("putfield " + "a" + ((UserDefinedType)tt).getClassDeclaration().getName().getName() + "/" + ((FieldCall) assignStat.getLvalue()).getField().getName() + " " + getJasminType(t2));
+            codes.add(
+                    "putfield "
+                            + "a"
+                            + ((UserDefinedType) tt).getClassDeclaration().getName().getName()
+                            + "/"
+                            + ((FieldCall) assignStat.getLvalue()).getField().getName()
+                            + " "
+                            + getJasminType(t2));
         }
 
         return null;
@@ -512,12 +611,14 @@ public class CodeGenerator extends Visitor<Void> {
         SymbolTable.pushFromQueue();
         conditional.getElseStatement().accept(this);
         SymbolTable.pop();
-        codes.add("label" + thenLabel +":");
+        codes.add("label" + thenLabel + ":");
         return null;
     }
 
     public Void visit(While whileStat) {
-        int bodyLabel = labelCounter, conditionLabel = labelCounter + 1, loopEndLabel = labelCounter + 2;
+        int bodyLabel = labelCounter,
+                conditionLabel = labelCounter + 1,
+                loopEndLabel = labelCounter + 2;
         labelCounter += 3;
         breakLabels.add(loopEndLabel);
         continueLabels.add(conditionLabel);
@@ -530,15 +631,18 @@ public class CodeGenerator extends Visitor<Void> {
         whileStat.expr.accept(this);
         codes.add("ifne label" + bodyLabel);
         codes.add("label" + loopEndLabel + ":");
-        continueLabels.remove(continueLabels.size()-1);
-        breakLabels.remove(breakLabels.size()-1);
+        continueLabels.remove(continueLabels.size() - 1);
+        breakLabels.remove(breakLabels.size() - 1);
         return null;
     }
 
     public Void visit(Return returnStat) {
         returnStat.getReturnedExpr().accept(this);
-        if (curType instanceof IntType || curType instanceof BoolType) codes.add("ireturn");
-        else if (curType instanceof StringType || curType instanceof UserDefinedType)  codes.add("areturn");
+        if (curType instanceof IntType || curType instanceof BoolType) {
+            codes.add("ireturn");
+        } else if (curType instanceof StringType || curType instanceof UserDefinedType) {
+            codes.add("areturn");
+        }
         return null;
     }
 
@@ -559,10 +663,16 @@ public class CodeGenerator extends Visitor<Void> {
     public Void visit(LocalVarDef localVarDef) {
         localVarDef.getInitialValue().accept(this);
         try {
-            SymbolTableItem si = SymbolTable.top().get("var_" + localVarDef.getLocalVarName().getName());
+            SymbolTableItem si =
+                    SymbolTable.top().get("var_" + localVarDef.getLocalVarName().getName());
             Type t = localVarDef.getInitialValue().accept(typeExtractor);
-            if (t instanceof IntType || t instanceof BoolType) codes.add("istore " + ((LocalVariableSymbolTableItem) si).getIndex());
-            else if (t instanceof UserDefinedType || t instanceof StringType || t instanceof ArrayType) codes.add("astore " + ((LocalVariableSymbolTableItem) si).getIndex());
+            if (t instanceof IntType || t instanceof BoolType) {
+                codes.add("istore " + ((LocalVariableSymbolTableItem) si).getIndex());
+            } else if (t instanceof UserDefinedType
+                    || t instanceof StringType
+                    || t instanceof ArrayType) {
+                codes.add("astore " + ((LocalVariableSymbolTableItem) si).getIndex());
+            }
         } catch (ItemNotFoundException e) {
             e.printStackTrace();
         }
@@ -571,33 +681,43 @@ public class CodeGenerator extends Visitor<Void> {
 
     public Void visit(IncStatement incStatement) {
         if (incStatement.getOperand() instanceof FieldCall) {
-            ((FieldCall)incStatement.getOperand()).getInstance().accept(this);
+            ((FieldCall) incStatement.getOperand()).getInstance().accept(this);
             incStatement.getOperand().accept(this);
             codes.add("iconst_1");
             codes.add("iadd");
             Type tt = ((FieldCall) incStatement.getOperand()).getInstance().accept(typeExtractor);
             Type tt2 = incStatement.getOperand().accept(typeExtractor);
-            codes.add("putfield a" + ((UserDefinedType)tt).getClassDeclaration().getName().getName() + "/" + ((FieldCall) incStatement.getOperand()).getField().getName() + " " + getJasminType(tt2));
-        }
-        else if(incStatement.getOperand() instanceof Identifier){
+            codes.add(
+                    "putfield a"
+                            + ((UserDefinedType) tt).getClassDeclaration().getName().getName()
+                            + "/"
+                            + ((FieldCall) incStatement.getOperand()).getField().getName()
+                            + " "
+                            + getJasminType(tt2));
+        } else if (incStatement.getOperand() instanceof Identifier) {
             try {
-                SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) incStatement.getOperand()).getName());
+                SymbolTableItem sti =
+                        SymbolTable.top()
+                                .get("var_" + ((Identifier) incStatement.getOperand()).getName());
                 if (sti instanceof FieldSymbolTableItem) {
                     codes.add("aload 0");
                     incStatement.getOperand().accept(this);
                     codes.add("iconst_1");
                     codes.add("iadd");
-                    codes.add("putfield a" + typeExtractor.currentClass.getName().getName() + "/" + ((Identifier) incStatement.getOperand()).getName() + " " + getJasminType(((FieldSymbolTableItem) sti).getFieldType()));
-                }
-                else if(sti instanceof LocalVariableSymbolTableItem) {
+                    codes.add(
+                            "putfield a"
+                                    + typeExtractor.currentClass.getName().getName()
+                                    + "/"
+                                    + ((Identifier) incStatement.getOperand()).getName()
+                                    + " "
+                                    + getJasminType(((FieldSymbolTableItem) sti).getFieldType()));
+                } else if (sti instanceof LocalVariableSymbolTableItem) {
                     codes.add("iinc " + ((LocalVariableSymbolTableItem) sti).getIndex() + " 1");
-
                 }
             } catch (ItemNotFoundException e) {
                 e.printStackTrace();
             }
-        }
-        else if(incStatement.getOperand() instanceof ArrayCall) {
+        } else if (incStatement.getOperand() instanceof ArrayCall) {
             ((ArrayCall) incStatement.getOperand()).getInstance().accept(this);
             ((ArrayCall) incStatement.getOperand()).getIndex().accept(this);
             incStatement.getOperand().accept(this);
@@ -610,33 +730,43 @@ public class CodeGenerator extends Visitor<Void> {
 
     public Void visit(DecStatement decStatement) {
         if (decStatement.getOperand() instanceof FieldCall) {
-            ((FieldCall)decStatement.getOperand()).getInstance().accept(this);
+            ((FieldCall) decStatement.getOperand()).getInstance().accept(this);
             decStatement.getOperand().accept(this);
             codes.add("iconst_1");
             codes.add("isub");
             Type tt = ((FieldCall) decStatement.getOperand()).getInstance().accept(typeExtractor);
             Type tt2 = decStatement.getOperand().accept(typeExtractor);
-            codes.add("putfield a" + ((UserDefinedType)tt).getClassDeclaration().getName().getName() + "/" + ((FieldCall) decStatement.getOperand()).getField().getName() + " " + getJasminType(tt2));
-        }
-        else if(decStatement.getOperand() instanceof Identifier){
+            codes.add(
+                    "putfield a"
+                            + ((UserDefinedType) tt).getClassDeclaration().getName().getName()
+                            + "/"
+                            + ((FieldCall) decStatement.getOperand()).getField().getName()
+                            + " "
+                            + getJasminType(tt2));
+        } else if (decStatement.getOperand() instanceof Identifier) {
             try {
-                SymbolTableItem sti = SymbolTable.top().get("var_" + ((Identifier) decStatement.getOperand()).getName());
+                SymbolTableItem sti =
+                        SymbolTable.top()
+                                .get("var_" + ((Identifier) decStatement.getOperand()).getName());
                 if (sti instanceof FieldSymbolTableItem) {
                     codes.add("aload 0");
                     decStatement.getOperand().accept(this);
                     codes.add("iconst_1");
                     codes.add("isub");
-                    codes.add("putfield a" + typeExtractor.currentClass.getName().getName() + "/" + ((Identifier) decStatement.getOperand()).getName() + " " + getJasminType(((FieldSymbolTableItem) sti).getFieldType()));
-                }
-                else if(sti instanceof LocalVariableSymbolTableItem) {
+                    codes.add(
+                            "putfield a"
+                                    + typeExtractor.currentClass.getName().getName()
+                                    + "/"
+                                    + ((Identifier) decStatement.getOperand()).getName()
+                                    + " "
+                                    + getJasminType(((FieldSymbolTableItem) sti).getFieldType()));
+                } else if (sti instanceof LocalVariableSymbolTableItem) {
                     codes.add("iinc " + ((LocalVariableSymbolTableItem) sti).getIndex() + " -1");
-
                 }
             } catch (ItemNotFoundException e) {
                 e.printStackTrace();
             }
-        }
-        else if(decStatement.getOperand() instanceof ArrayCall) {
+        } else if (decStatement.getOperand() instanceof ArrayCall) {
             ((ArrayCall) decStatement.getOperand()).getInstance().accept(this);
             ((ArrayCall) decStatement.getOperand()).getIndex().accept(this);
             decStatement.getOperand().accept(this);
@@ -651,7 +781,11 @@ public class CodeGenerator extends Visitor<Void> {
     public Void visit(ClassDeclaration classDeclaration) {
         typeExtractor.setCurrentClass(classDeclaration);
         codes.add(".class public a" + classDeclaration.getName().getName());
-        codes.add(".super " + ((classDeclaration.getParentName().getName() != null) ? "a" +  classDeclaration.getParentName().getName() : "java/lang/Object"));
+        codes.add(
+                ".super "
+                        + ((classDeclaration.getParentName().getName() != null)
+                                ? "a" + classDeclaration.getParentName().getName()
+                                : "java/lang/Object"));
         for (ClassMemberDeclaration cmd : classDeclaration.getClassMembers()) {
             if (cmd instanceof FieldDeclaration) {
                 cmd.accept(this);
@@ -659,7 +793,12 @@ public class CodeGenerator extends Visitor<Void> {
         }
         codes.add(".method public <init>()V");
         codes.add("aload 0");
-        codes.add("invokespecial " + ((classDeclaration.getParentName().getName() != null)? "a" + classDeclaration.getParentName().getName() :"java/lang/Object") + "/<init>()V");
+        codes.add(
+                "invokespecial "
+                        + ((classDeclaration.getParentName().getName() != null)
+                                ? "a" + classDeclaration.getParentName().getName()
+                                : "java/lang/Object")
+                        + "/<init>()V");
         codes.add("return");
         codes.add(".end method");
         for (ClassMemberDeclaration cmd : classDeclaration.getClassMembers()) {
@@ -675,7 +814,11 @@ public class CodeGenerator extends Visitor<Void> {
         entryclassSymbolTable = SymbolTable.top();
         typeExtractor.setCurrentClass(entryClassDeclaration);
         codes.add(".class public a" + entryClassDeclaration.getName().getName());
-        codes.add(".super " + ((entryClassDeclaration.getParentName().getName() != null) ? "a" + entryClassDeclaration.getParentName().getName() : "java/lang/Object"));
+        codes.add(
+                ".super "
+                        + ((entryClassDeclaration.getParentName().getName() != null)
+                                ? "a" + entryClassDeclaration.getParentName().getName()
+                                : "java/lang/Object"));
         for (ClassMemberDeclaration cmd : entryClassDeclaration.getClassMembers()) {
             if (cmd instanceof FieldDeclaration) {
                 cmd.accept(this);
@@ -683,19 +826,32 @@ public class CodeGenerator extends Visitor<Void> {
         }
         codes.add(".method public <init>()V");
         codes.add("aload 0");
-        codes.add("invokespecial " + ((entryClassDeclaration.getParentName().getName() != null)? "a" + entryClassDeclaration.getParentName().getName() :"java/lang/Object") + "/<init>()V");
+        codes.add(
+                "invokespecial "
+                        + ((entryClassDeclaration.getParentName().getName() != null)
+                                ? "a" + entryClassDeclaration.getParentName().getName()
+                                : "java/lang/Object")
+                        + "/<init>()V");
         codes.add("return");
         codes.add(".end method");
         for (ClassMemberDeclaration cmd : entryClassDeclaration.getClassMembers()) {
-           if (cmd instanceof MethodDeclaration) {
-               cmd.accept(this);
-           }
+            if (cmd instanceof MethodDeclaration) {
+                cmd.accept(this);
+            }
         }
         return null;
     }
 
     public Void visit(FieldDeclaration fieldDeclaration) {
-        codes.add(".field " + ((fieldDeclaration.getAccessModifier() == AccessModifier.ACCESS_MODIFIER_PRIVATE)? "private " : "public ") + fieldDeclaration.getIdentifier().getName() + " " + getJasminType(fieldDeclaration.getType()));
+        codes.add(
+                ".field "
+                        + ((fieldDeclaration.getAccessModifier()
+                                        == AccessModifier.ACCESS_MODIFIER_PRIVATE)
+                                ? "private "
+                                : "public ")
+                        + fieldDeclaration.getIdentifier().getName()
+                        + " "
+                        + getJasminType(fieldDeclaration.getType()));
         return null;
     }
 
@@ -705,8 +861,15 @@ public class CodeGenerator extends Visitor<Void> {
     }
 
     public Void visit(MethodDeclaration methodDeclaration) {
-        String temp = ".method " + ((methodDeclaration.getAccessModifier() == AccessModifier.ACCESS_MODIFIER_PRIVATE)? "private " : "public ") + methodDeclaration.getName().getName() + "(";
-        for (ParameterDeclaration p: methodDeclaration.getArgs()) {
+        String temp =
+                ".method "
+                        + ((methodDeclaration.getAccessModifier()
+                                        == AccessModifier.ACCESS_MODIFIER_PRIVATE)
+                                ? "private "
+                                : "public ")
+                        + methodDeclaration.getName().getName()
+                        + "(";
+        for (ParameterDeclaration p : methodDeclaration.getArgs()) {
             temp = temp + getJasminType(p.getType());
         }
         temp = temp + ")" + getJasminType(methodDeclaration.getReturnType());
@@ -765,10 +928,10 @@ public class CodeGenerator extends Visitor<Void> {
         codes.clear();
     }
 
-    public Void visit(Program program)  {
+    public Void visit(Program program) {
         createAnyClass();
         SymbolTable.pushFromQueue();
-        for (ClassDeclaration c: program.getClasses()) {
+        for (ClassDeclaration c : program.getClasses()) {
             SymbolTable.pushFromQueue();
             c.accept(this);
             createFile("a" + c.getName().getName());
@@ -779,6 +942,4 @@ public class CodeGenerator extends Visitor<Void> {
         createRunnerclass();
         return null;
     }
-
-
 }

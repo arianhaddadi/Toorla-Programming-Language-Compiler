@@ -21,8 +21,7 @@ public class Identifier extends Expression {
     public String toString() {
         if (name != null) {
             return "(Identifier," + name + ")";
-        }
-        else {
+        } else {
             return "(Identifier,Dummy)";
         }
     }

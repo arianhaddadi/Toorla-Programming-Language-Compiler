@@ -11,8 +11,7 @@ public class CompileErrorException extends Exception {
         this.errorItem = errorItem;
     }
 
-    public CompileErrorException() {
-    }
+    public CompileErrorException() {}
 
     public void setPlace(int line, int column) {
         atLine = line;
@@ -22,5 +21,4 @@ public class CompileErrorException extends Exception {
     public String toString() {
         return String.format("Error:Line:%d:%s;", atLine, errorItem);
     }
-
 }

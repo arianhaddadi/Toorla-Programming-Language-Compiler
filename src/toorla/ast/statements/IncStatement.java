@@ -23,5 +23,4 @@ public class IncStatement extends Statement {
     public Expression getOperand() {
         return operand;
     }
-
 }

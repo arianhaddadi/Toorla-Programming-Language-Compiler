@@ -3,9 +3,7 @@ package toorla.visitors.typecheck.exceptions;
 import toorla.utils.CompileErrorException;
 
 public class NoEntryClassFoundException extends CompileErrorException {
-    public NoEntryClassFoundException() {
-
-    }
+    public NoEntryClassFoundException() {}
 
     @Override
     public String toString() {

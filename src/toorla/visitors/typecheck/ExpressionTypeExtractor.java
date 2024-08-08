@@ -4,16 +4,22 @@ import toorla.ast.declarations.classes.ClassDeclaration;
 import toorla.ast.declarations.classes.classmembers.AccessModifier;
 import toorla.ast.expressions.*;
 import toorla.ast.expressions.binaryexpressions.*;
-import toorla.ast.expressions.unaryexpressions.*;
-import toorla.ast.expressions.value.*;
-import toorla.visitors.typecheck.exceptions.*;
+import toorla.ast.expressions.unaryexpressions.Neg;
+import toorla.ast.expressions.unaryexpressions.Not;
+import toorla.ast.expressions.value.BoolValue;
+import toorla.ast.expressions.value.IntValue;
+import toorla.ast.expressions.value.StringValue;
 import toorla.symboltable.SymbolTable;
 import toorla.symboltable.exceptions.ItemNotFoundException;
-import toorla.symboltable.items.*;
-import toorla.symboltable.items.variables.*;
+import toorla.symboltable.items.ClassSymbolTableItem;
+import toorla.symboltable.items.MethodSymbolTableItem;
+import toorla.symboltable.items.variables.FieldSymbolTableItem;
+import toorla.symboltable.items.variables.VarSymbolTableItem;
 import toorla.types.*;
 import toorla.utils.graph.Graph;
 import toorla.visitors.Visitor;
+import toorla.visitors.typecheck.exceptions.*;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,9 +39,9 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
                 && (t2 instanceof IntType || t2 instanceof Undefined))) {
             plusExpr.addError(new UnsupportedOperandTypeException(plusExpr));
             return new Undefined();
-        }
-        else if(t1 instanceof Undefined || t2 instanceof Undefined)
+        } else if (t1 instanceof Undefined || t2 instanceof Undefined) {
             return new Undefined();
+        }
         return new IntType();
     }
 
@@ -47,9 +53,9 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
                 && (t2 instanceof IntType || t2 instanceof Undefined))) {
             minusExpr.addError(new UnsupportedOperandTypeException(minusExpr));
             return new Undefined();
-        }
-        else if(t1 instanceof Undefined || t2 instanceof Undefined)
+        } else if (t1 instanceof Undefined || t2 instanceof Undefined) {
             return new Undefined();
+        }
         return new IntType();
     }
 
@@ -61,9 +67,9 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
                 && (t2 instanceof IntType || t2 instanceof Undefined))) {
             timesExpr.addError(new UnsupportedOperandTypeException(timesExpr));
             return new Undefined();
-        }
-        else if(t1 instanceof Undefined || t2 instanceof Undefined)
+        } else if (t1 instanceof Undefined || t2 instanceof Undefined) {
             return new Undefined();
+        }
         return new IntType();
     }
 
@@ -75,9 +81,9 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
                 && (t2 instanceof IntType || t2 instanceof Undefined))) {
             divExpr.addError(new UnsupportedOperandTypeException(divExpr));
             return new Undefined();
-        }
-        else if(t1 instanceof Undefined || t2 instanceof Undefined)
+        } else if (t1 instanceof Undefined || t2 instanceof Undefined) {
             return new Undefined();
+        }
         return new IntType();
     }
 
@@ -89,9 +95,9 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
                 && (t2 instanceof IntType || t2 instanceof Undefined))) {
             moduloExpr.addError(new UnsupportedOperandTypeException(moduloExpr));
             return new Undefined();
-        }
-        else if(t1 instanceof Undefined || t2 instanceof Undefined)
+        } else if (t1 instanceof Undefined || t2 instanceof Undefined) {
             return new Undefined();
+        }
         return new IntType();
     }
 
@@ -100,12 +106,11 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
         Type t1 = equalsExpr.getLhs().accept(this);
         Type t2 = equalsExpr.getRhs().accept(this);
         if (!t1.equals(t2)) {
-            equalsExpr.addError(
-                    new UnsupportedOperandTypeException(equalsExpr));
+            equalsExpr.addError(new UnsupportedOperandTypeException(equalsExpr));
+            return new Undefined();
+        } else if (t1 instanceof Undefined || t2 instanceof Undefined) {
             return new Undefined();
         }
-        else if(t1 instanceof Undefined || t2 instanceof Undefined)
-            return new Undefined();
         return new BoolType();
     }
 
@@ -117,9 +122,9 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
                 && (t2 instanceof IntType || t2 instanceof Undefined))) {
             gtExpr.addError(new UnsupportedOperandTypeException(gtExpr));
             return new Undefined();
-        }
-        else if(t1 instanceof Undefined || t2 instanceof Undefined)
+        } else if (t1 instanceof Undefined || t2 instanceof Undefined) {
             return new Undefined();
+        }
         return new BoolType();
     }
 
@@ -131,9 +136,9 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
                 && (t2 instanceof IntType || t2 instanceof Undefined))) {
             lessThanExpr.addError(new UnsupportedOperandTypeException(lessThanExpr));
             return new Undefined();
-        }
-        else if(t1 instanceof Undefined || t2 instanceof Undefined)
+        } else if (t1 instanceof Undefined || t2 instanceof Undefined) {
             return new Undefined();
+        }
         return new BoolType();
     }
 
@@ -145,9 +150,9 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
                 && (t2 instanceof BoolType || t2 instanceof Undefined))) {
             andExpr.addError(new UnsupportedOperandTypeException(andExpr));
             return new Undefined();
-        }
-        else if(t1 instanceof Undefined || t2 instanceof Undefined)
+        } else if (t1 instanceof Undefined || t2 instanceof Undefined) {
             return new Undefined();
+        }
         return new BoolType();
     }
 
@@ -159,9 +164,9 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
                 && (t2 instanceof BoolType || t2 instanceof Undefined))) {
             orExpr.addError(new UnsupportedOperandTypeException(orExpr));
             return new Undefined();
-        }
-        else if(t1 instanceof Undefined || t2 instanceof Undefined)
+        } else if (t1 instanceof Undefined || t2 instanceof Undefined) {
             return new Undefined();
+        }
         return new BoolType();
     }
 
@@ -188,11 +193,14 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
     @Override
     public Type visit(Identifier identifier) {
         try {
-            return ((VarSymbolTableItem) SymbolTable.top().get(VarSymbolTableItem.var_modifier + identifier.getName()))
+            return ((VarSymbolTableItem)
+                            SymbolTable.top()
+                                    .get(VarSymbolTableItem.var_modifier + identifier.getName()))
                     .getType();
         } catch (ItemNotFoundException variableNotDeclared) {
-            identifier.addError(new VariableNotDeclaredException(identifier.getName()
-                   , identifier.line, identifier.col));
+            identifier.addError(
+                    new VariableNotDeclaredException(
+                            identifier.getName(), identifier.line, identifier.col));
             return new Undefined();
         }
     }
@@ -213,11 +221,16 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
         String singleTypeName = newArray.getType().toString();
         int lineNumber = newArray.line;
         int colNumber = newArray.col;
-        if (!(lengthType instanceof IntType || lengthType instanceof Undefined))
+        if (!(lengthType instanceof IntType || lengthType instanceof Undefined)) {
             newArray.addError(new NonIntegerArraySizeException(lineNumber, colNumber));
-        if(newArray.getType() instanceof UserDefinedType)
-            if(!classHierarchy.doesGraphContainNode(singleTypeName))
-                newArray.addError(new ClassNotDeclaredException(newArray.getType().toString(), newArray.line, newArray.col));
+        }
+        if (newArray.getType() instanceof UserDefinedType) {
+            if (!classHierarchy.doesGraphContainNode(singleTypeName)) {
+                newArray.addError(
+                        new ClassNotDeclaredException(
+                                newArray.getType().toString(), newArray.line, newArray.col));
+            }
+        }
         return new ArrayType(newArray.getType());
     }
 
@@ -236,10 +249,10 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
         String className = newClassInstance.getClassName().getName();
         int lineNumber = newClassInstance.line;
         int colNumber = newClassInstance.col;
-        if(!classHierarchy.doesGraphContainNode(className))
-            newClassInstance.addError(new ClassNotDeclaredException(
-                    className, lineNumber, colNumber
-           ));
+        if (!classHierarchy.doesGraphContainNode(className)) {
+            newClassInstance.addError(
+                    new ClassNotDeclaredException(className, lineNumber, colNumber));
+        }
         return new UserDefinedType(new ClassDeclaration(newClassInstance.getClassName()));
     }
 
@@ -247,46 +260,69 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
     public Type visit(FieldCall fieldCall) {
         Type instanceType = fieldCall.getInstance().accept(this);
         if (instanceType instanceof UserDefinedType) {
-            String className = ((UserDefinedType) instanceType).getClassDeclaration().getName().getName();
+            String className =
+                    ((UserDefinedType) instanceType).getClassDeclaration().getName().getName();
             try {
-                ClassSymbolTableItem currentClass = (ClassSymbolTableItem) SymbolTable.root
-                        .get(ClassSymbolTableItem.classModifier + className);
+                ClassSymbolTableItem currentClass =
+                        (ClassSymbolTableItem)
+                                SymbolTable.root.get(
+                                        ClassSymbolTableItem.classModifier + className);
                 try {
-                    FieldSymbolTableItem calledField = (FieldSymbolTableItem) currentClass.getSymbolTable()
-                            .get(VarSymbolTableItem.var_modifier + fieldCall.getField().getName());
+                    FieldSymbolTableItem calledField =
+                            (FieldSymbolTableItem)
+                                    currentClass
+                                            .getSymbolTable()
+                                            .get(
+                                                    VarSymbolTableItem.var_modifier
+                                                            + fieldCall.getField().getName());
                     if (calledField.getAccessModifier() == AccessModifier.ACCESS_MODIFIER_PRIVATE
                             && !(fieldCall.getInstance() instanceof Self)) {
-                        fieldCall.addError(new IllegalAccessToFieldException(calledField.getName(), className, fieldCall.line, fieldCall.col));
+                        fieldCall.addError(
+                                new IllegalAccessToFieldException(
+                                        calledField.getName(),
+                                        className,
+                                        fieldCall.line,
+                                        fieldCall.col));
                         return new Undefined();
                     }
                     return calledField.getFieldType();
                 } catch (ItemNotFoundException fieldNotFound) {
-                    fieldCall.addError(new FieldNotDeclaredException(fieldCall.getField().getName(), className, fieldCall.line, fieldCall.col));
+                    fieldCall.addError(
+                            new FieldNotDeclaredException(
+                                    fieldCall.getField().getName(),
+                                    className,
+                                    fieldCall.line,
+                                    fieldCall.col));
                     return new Undefined();
                 }
             } catch (ItemNotFoundException classNotFound) {
-                fieldCall.addError(new ClassNotDeclaredException(className,fieldCall.line,fieldCall.col));
+                fieldCall.addError(
+                        new ClassNotDeclaredException(className, fieldCall.line, fieldCall.col));
                 return new Undefined();
             }
-        } else if (instanceType instanceof ArrayType && fieldCall.getField().getName().equals("length"))
+        } else if (instanceType instanceof ArrayType
+                && fieldCall.getField().getName().equals("length")) {
             return new IntType();
-        else if(!(instanceType instanceof Undefined))
+        } else if (!(instanceType instanceof Undefined)) {
             fieldCall.addError(new UnsupportedOperandTypeException(fieldCall));
+        }
         return new Undefined();
     }
 
-    private boolean areParametersTypeCorrespondence(List<Type> formalTypes, List<Type> actualTypes) {
+    private boolean areParametersTypeCorrespondence(
+            List<Type> formalTypes, List<Type> actualTypes) {
         boolean paramProfileCorrespondance = true;
-        if (actualTypes.size() != formalTypes.size())
+        if (actualTypes.size() != formalTypes.size()) {
             paramProfileCorrespondance = false;
-        else
+        } else {
             for (int i = 0; i < actualTypes.size(); i++) {
                 Type actualArgType = actualTypes.get(i);
                 Type formalArgType = formalTypes.get(i);
-                paramProfileCorrespondance = TypeChecker.isFirstSubTypeOfSecond(
-                        actualArgType, formalArgType, classHierarchy
-               );
+                paramProfileCorrespondance =
+                        TypeChecker.isFirstSubTypeOfSecond(
+                                actualArgType, formalArgType, classHierarchy);
             }
+        }
         return paramProfileCorrespondance;
     }
 
@@ -294,34 +330,56 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
     public Type visit(MethodCall methodCall) {
         Type instanceType = methodCall.getInstance().accept(this);
         if (instanceType instanceof UserDefinedType) {
-            String className = ((UserDefinedType) instanceType).getClassDeclaration().getName().getName();
+            String className =
+                    ((UserDefinedType) instanceType).getClassDeclaration().getName().getName();
             try {
-                ClassSymbolTableItem currentClass = (ClassSymbolTableItem) SymbolTable.root
-                        .get(ClassSymbolTableItem.classModifier + className);
+                ClassSymbolTableItem currentClass =
+                        (ClassSymbolTableItem)
+                                SymbolTable.root.get(
+                                        ClassSymbolTableItem.classModifier + className);
                 try {
-                    MethodSymbolTableItem calledMethod = (MethodSymbolTableItem) currentClass.getSymbolTable()
-                            .get(MethodSymbolTableItem.methodModifier + methodCall.getMethodName().getName());
-                    List<Type> actualParamsTypes = methodCall.getArgs().stream().map(a -> a.accept(this))
-                            .collect(Collectors.toList());
+                    MethodSymbolTableItem calledMethod =
+                            (MethodSymbolTableItem)
+                                    currentClass
+                                            .getSymbolTable()
+                                            .get(
+                                                    MethodSymbolTableItem.methodModifier
+                                                            + methodCall.getMethodName().getName());
+                    List<Type> actualParamsTypes =
+                            methodCall.getArgs().stream()
+                                    .map(a -> a.accept(this))
+                                    .collect(Collectors.toList());
                     List<Type> formalParamsTypes = calledMethod.getArgumentsTypes();
-                    if (!areParametersTypeCorrespondence(formalParamsTypes,actualParamsTypes))
+                    if (!areParametersTypeCorrespondence(formalParamsTypes, actualParamsTypes)) {
                         throw new ItemNotFoundException();
+                    }
                     if (calledMethod.getAccessModifier() == AccessModifier.ACCESS_MODIFIER_PRIVATE
-                            && !(methodCall.getInstance() instanceof Self))
+                            && !(methodCall.getInstance() instanceof Self)) {
                         methodCall.addError(
-                            new IllegalAccessToMethodException(calledMethod.getName(), currentClass.getName(), methodCall.line, methodCall.col));
+                                new IllegalAccessToMethodException(
+                                        calledMethod.getName(),
+                                        currentClass.getName(),
+                                        methodCall.line,
+                                        methodCall.col));
+                    }
                     return calledMethod.getReturnType();
                 } catch (ItemNotFoundException methodNotFound) {
-                    methodCall.addError(new MethodNotDeclaredException(methodCall.getMethodName().getName(), className, methodCall.line, methodCall.col));
+                    methodCall.addError(
+                            new MethodNotDeclaredException(
+                                    methodCall.getMethodName().getName(),
+                                    className,
+                                    methodCall.line,
+                                    methodCall.col));
                     return new Undefined();
                 }
             } catch (ItemNotFoundException classNotFound) {
-                methodCall.addError(new ClassNotDeclaredException(className, methodCall.line, methodCall.col));
+                methodCall.addError(
+                        new ClassNotDeclaredException(className, methodCall.line, methodCall.col));
                 return new Undefined();
             }
+        } else if (!(instanceType instanceof Undefined)) {
+            methodCall.addError(new UnsupportedOperandTypeException(methodCall));
         }
-        else if(!(instanceType instanceof Undefined))
-                methodCall.addError(new UnsupportedOperandTypeException(methodCall));
         return new Undefined();
     }
 
@@ -329,17 +387,16 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
     public Type visit(ArrayCall arrayCall) {
         Type operandType = arrayCall.getInstance().accept(this);
         Type indexType = arrayCall.getIndex().accept(this);
-        boolean errorFlag = false;
-        if (!(operandType instanceof ArrayType || operandType instanceof Undefined))
+        boolean errorFlag = !(operandType instanceof ArrayType || operandType instanceof Undefined);
+        if (!(indexType instanceof IntType || operandType instanceof Undefined)) {
             errorFlag = true;
-        if (!(indexType instanceof IntType || operandType instanceof Undefined))
-            errorFlag = true;
+        }
         if (errorFlag) {
             arrayCall.addError(new UnsupportedOperandTypeException(arrayCall));
             return new Undefined();
-        }
-        else if(indexType instanceof Undefined || operandType instanceof Undefined)
+        } else if (indexType instanceof Undefined || operandType instanceof Undefined) {
             return new Undefined();
+        }
         return ((ArrayType) operandType).getSingleType();
     }
 
@@ -348,12 +405,11 @@ public class ExpressionTypeExtractor extends Visitor<Type> {
         Type t1 = notEquals.getLhs().accept(this);
         Type t2 = notEquals.getRhs().accept(this);
         if (!t1.equals(t2)) {
-            notEquals.addError(
-                    new UnsupportedOperandTypeException(notEquals));
+            notEquals.addError(new UnsupportedOperandTypeException(notEquals));
+            return new Undefined();
+        } else if (t1 instanceof Undefined || t2 instanceof Undefined) {
             return new Undefined();
         }
-        else if(t1 instanceof Undefined || t2 instanceof Undefined)
-            return new Undefined();
         return new BoolType();
     }
 

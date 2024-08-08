@@ -30,5 +30,4 @@ public class LocalVarDef extends Statement {
     public Identifier getLocalVarName() {
         return localVarName;
     }
-
 }

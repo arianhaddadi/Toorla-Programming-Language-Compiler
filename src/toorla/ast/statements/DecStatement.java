@@ -23,5 +23,4 @@ public class DecStatement extends Statement {
     public Expression getOperand() {
         return operand;
     }
-
 }

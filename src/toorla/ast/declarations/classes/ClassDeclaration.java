@@ -9,10 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ClassDeclaration extends Declaration {
+    private final ArrayList<ClassMemberDeclaration> members = new ArrayList<>();
     private Identifier name;
     private Identifier parentName;
-
-    private final ArrayList<ClassMemberDeclaration> members = new ArrayList<>();
 
     public ClassDeclaration(Identifier name) {
         this.name = name;

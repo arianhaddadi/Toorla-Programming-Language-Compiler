@@ -12,8 +12,7 @@ public abstract class BinaryExpression extends Expression {
         this.rhs = rhs;
     }
 
-    public BinaryExpression() {
-    }
+    public BinaryExpression() {}
 
     public Expression getLhs() {
         return lhs;
@@ -37,5 +36,4 @@ public abstract class BinaryExpression extends Expression {
     }
 
     public abstract <R> R accept(IVisitor<R> visitor);
-
 }

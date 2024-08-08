@@ -10,8 +10,7 @@ public abstract class UnaryExpression extends Expression {
         this.expr = expr;
     }
 
-    public UnaryExpression() {
-    }
+    public UnaryExpression() {}
 
     public abstract <R> R accept(IVisitor<R> visitor);
 

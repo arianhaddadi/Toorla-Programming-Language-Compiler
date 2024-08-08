@@ -1,7 +1,7 @@
 package toorla.ast.expressions.value;
 
-import toorla.types.Type;
 import toorla.types.BoolType;
+import toorla.types.Type;
 import toorla.visitors.IVisitor;
 
 public class BoolValue extends Value {

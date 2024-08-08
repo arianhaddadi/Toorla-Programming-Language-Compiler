@@ -1,12 +1,13 @@
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+
 import toorla.ast.Program;
-import toorla.visitors.nameanalysis.NameAnalyzer;
-import toorla.visitors.typecheck.TypeChecker;
+import toorla.lexer_parser.ToorlaLexer;
+import toorla.lexer_parser.ToorlaParser;
 import toorla.visitors.ErrorReporter;
 import toorla.visitors.codegen.CodeGenerator;
-import toorla.lexer_parser.*;
-
+import toorla.visitors.nameanalysis.NameAnalyzer;
+import toorla.visitors.typecheck.TypeChecker;
 
 public class ToorlaCompiler {
     public void compile(CharStream textStream) {

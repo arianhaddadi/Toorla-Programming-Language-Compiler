@@ -1,24 +1,32 @@
 package toorla.visitors.nameanalysis;
 
 import toorla.ast.Program;
-import toorla.ast.declarations.classes.*;
-import toorla.ast.declarations.classes.classmembers.*;
+import toorla.ast.declarations.classes.ClassDeclaration;
+import toorla.ast.declarations.classes.EntryClassDeclaration;
+import toorla.ast.declarations.classes.classmembers.ClassMemberDeclaration;
+import toorla.ast.declarations.classes.classmembers.FieldDeclaration;
+import toorla.ast.declarations.classes.classmembers.MethodDeclaration;
 import toorla.ast.declarations.localvars.ParameterDeclaration;
-import toorla.ast.statements.*;
-import toorla.ast.statements.localvars.*;
-import toorla.visitors.nameanalysis.exceptions.*;
+import toorla.ast.statements.Block;
+import toorla.ast.statements.Conditional;
+import toorla.ast.statements.Statement;
+import toorla.ast.statements.While;
+import toorla.ast.statements.localvars.LocalVarDef;
+import toorla.ast.statements.localvars.LocalVarsDefinitions;
 import toorla.symboltable.SymbolTable;
 import toorla.symboltable.exceptions.ItemNotFoundException;
-import toorla.symboltable.items.*;
+import toorla.symboltable.items.MethodSymbolTableItem;
+import toorla.symboltable.items.SymbolTableItem;
 import toorla.symboltable.items.variables.VarSymbolTableItem;
 import toorla.visitors.Visitor;
+import toorla.visitors.nameanalysis.exceptions.FieldRedefinitionException;
+import toorla.visitors.nameanalysis.exceptions.MethodRedefinitionException;
 
 public class NameCheckingPass extends Visitor<Void> implements INameAnalyzingPass<Void> {
     @Override
     public Void visit(Block block) {
         SymbolTable.pushFromQueue();
-        for (Statement stmt : block.body)
-            stmt.accept(this);
+        for (Statement stmt : block.body) stmt.accept(this);
         SymbolTable.pop();
         return null;
     }
@@ -45,8 +53,7 @@ public class NameCheckingPass extends Visitor<Void> implements INameAnalyzingPas
     @Override
     public Void visit(ClassDeclaration classDeclaration) {
         SymbolTable.pushFromQueue();
-        for (ClassMemberDeclaration cmd : classDeclaration.getClassMembers())
-            cmd.accept(this);
+        for (ClassMemberDeclaration cmd : classDeclaration.getClassMembers()) cmd.accept(this);
         SymbolTable.pop();
         return null;
     }
@@ -59,31 +66,45 @@ public class NameCheckingPass extends Visitor<Void> implements INameAnalyzingPas
 
     @Override
     public Void visit(FieldDeclaration fieldDeclaration) {
-        if (!fieldDeclaration.hasErrors())
+        if (!fieldDeclaration.hasErrors()) {
             try {
-                SymbolTable.top().getInParentScopes(VarSymbolTableItem.var_modifier + fieldDeclaration.getIdentifier().getName());
-                FieldRedefinitionException e = new FieldRedefinitionException(
-                        fieldDeclaration.getIdentifier().getName(), fieldDeclaration.line, fieldDeclaration.col);
+                SymbolTable.top()
+                        .getInParentScopes(
+                                VarSymbolTableItem.var_modifier
+                                        + fieldDeclaration.getIdentifier().getName());
+                FieldRedefinitionException e =
+                        new FieldRedefinitionException(
+                                fieldDeclaration.getIdentifier().getName(),
+                                fieldDeclaration.line,
+                                fieldDeclaration.col);
                 fieldDeclaration.addError(e);
-            } catch (ItemNotFoundException ignored) {}
+            } catch (ItemNotFoundException ignored) {
+            }
+        }
         return null;
     }
 
     @Override
     public Void visit(MethodDeclaration methodDeclaration) {
-        if (!methodDeclaration.hasErrors())
+        if (!methodDeclaration.hasErrors()) {
             try {
-                SymbolTableItem sameMethodInParents = SymbolTable.top().getInParentScopes(
-                        MethodSymbolTableItem.methodModifier + methodDeclaration.getName().getName());
-                MethodRedefinitionException e = new MethodRedefinitionException(methodDeclaration.getName().getName(),
-                        methodDeclaration.getName().line, methodDeclaration.getName().col);
+                SymbolTableItem sameMethodInParents =
+                        SymbolTable.top()
+                                .getInParentScopes(
+                                        MethodSymbolTableItem.methodModifier
+                                                + methodDeclaration.getName().getName());
+                MethodRedefinitionException e =
+                        new MethodRedefinitionException(
+                                methodDeclaration.getName().getName(),
+                                methodDeclaration.getName().line,
+                                methodDeclaration.getName().col);
                 methodDeclaration.addError(e);
-            } catch (ItemNotFoundException ignored) {}
+            } catch (ItemNotFoundException ignored) {
+            }
+        }
         SymbolTable.pushFromQueue();
-        for (ParameterDeclaration pd : methodDeclaration.getArgs())
-            pd.accept(this);
-        for (Statement stmt : methodDeclaration.getBody())
-            stmt.accept(this);
+        for (ParameterDeclaration pd : methodDeclaration.getArgs()) pd.accept(this);
+        for (Statement stmt : methodDeclaration.getBody()) stmt.accept(this);
         SymbolTable.pop();
         return null;
     }

@@ -10,7 +10,10 @@ public class MainMethodNotFoundException extends CompileErrorException {
 
     @Override
     public String toString() {
-        return String.format("Error:Line:%d:Entry class should have a main method " +
-                "with no argument and int return type;", atLine);
+        return String.format(
+                "Error:Line:%d:Entry class should have a main "
+                        + "method "
+                        + "with no argument and int return type;",
+                atLine);
     }
 }

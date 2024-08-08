@@ -15,8 +15,8 @@ public class FieldNotDeclaredException extends CompileErrorException {
 
     @Override
     public String toString() {
-        return String.format("Error:Line:%d:There is " +
-                "no Field with name %s in class %s;", atLine, fieldName, className
-       );
+        return String.format(
+                "Error:Line:%d:There is " + "no Field with name %s in class %s;",
+                atLine, fieldName, className);
     }
 }

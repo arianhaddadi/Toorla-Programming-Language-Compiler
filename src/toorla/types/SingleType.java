@@ -1,4 +1,3 @@
 package toorla.types;
 
-public abstract class SingleType extends Type {
-}
+public abstract class SingleType extends Type {}

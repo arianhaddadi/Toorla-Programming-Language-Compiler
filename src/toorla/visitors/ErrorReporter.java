@@ -44,8 +44,7 @@ public class ErrorReporter extends Visitor<Integer> {
     private Integer report(UnaryExpression unaryExpression) {
         List<CompileErrorException> errors = unaryExpression.flushErrors();
         int numOfErrors = errors.size();
-        for(CompileErrorException e: errors)
-            System.out.println(e);
+        for (CompileErrorException e : errors) System.out.println(e);
         numOfErrors += unaryExpression.getExpr().accept(this);
         return numOfErrors;
     }
@@ -53,8 +52,7 @@ public class ErrorReporter extends Visitor<Integer> {
     @Override
     public Integer visit(Block block) {
         int numOfErrors = printErrors(block);
-        for (Statement stmt : block.body)
-            numOfErrors += stmt.accept(this);
+        for (Statement stmt : block.body) numOfErrors += stmt.accept(this);
         return numOfErrors;
     }
 
@@ -108,10 +106,8 @@ public class ErrorReporter extends Visitor<Integer> {
     @Override
     public Integer visit(MethodDeclaration methodDeclaration) {
         int numOfErrors = printErrors(methodDeclaration);
-        for (ParameterDeclaration pd : methodDeclaration.getArgs())
-            numOfErrors += pd.accept(this);
-        for (Statement stmt : methodDeclaration.getBody())
-            numOfErrors += stmt.accept(this);
+        for (ParameterDeclaration pd : methodDeclaration.getArgs()) numOfErrors += pd.accept(this);
+        for (Statement stmt : methodDeclaration.getBody()) numOfErrors += stmt.accept(this);
         return numOfErrors;
     }
 
@@ -264,7 +260,6 @@ public class ErrorReporter extends Visitor<Integer> {
     public Integer visit(Skip skip) {
         return 0;
     }
-
 
     public Integer visit(IncStatement incStatement) {
         int numOfErrors = printErrors(incStatement);

@@ -1,6 +1,5 @@
 package toorla.types;
 
-
 public class BoolType extends SingleType {
     @Override
     public String toString() {

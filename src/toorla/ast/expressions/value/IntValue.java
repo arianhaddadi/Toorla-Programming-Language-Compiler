@@ -1,7 +1,7 @@
 package toorla.ast.expressions.value;
 
-import toorla.types.Type;
 import toorla.types.IntType;
+import toorla.types.Type;
 import toorla.visitors.IVisitor;
 
 public class IntValue extends Value {
@@ -33,5 +33,4 @@ public class IntValue extends Value {
     public <R> R accept(IVisitor<R> visitor) {
         return visitor.visit(this);
     }
-
 }

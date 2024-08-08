@@ -5,9 +5,9 @@ import toorla.types.Type;
 import toorla.visitors.IVisitor;
 
 public abstract class Value extends Expression {
-    abstract public Type getType();
-
     protected Type type;
+
+    public abstract Type getType();
 
     public abstract String toString();
 

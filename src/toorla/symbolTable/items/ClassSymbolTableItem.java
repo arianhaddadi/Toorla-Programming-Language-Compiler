@@ -20,12 +20,12 @@ public class ClassSymbolTableItem extends SymbolTableItem {
         return symbolTable;
     }
 
-    public SymbolTable getParentSymbolTable() {
-        return parentSymbolTable;
-    }
-
     public void setSymbolTable(SymbolTable symbolTable) {
         this.symbolTable = symbolTable;
+    }
+
+    public SymbolTable getParentSymbolTable() {
+        return parentSymbolTable;
     }
 
     public void setParentSymbolTable(SymbolTable symbolTable) {

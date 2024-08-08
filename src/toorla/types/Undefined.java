@@ -5,6 +5,7 @@ public class Undefined extends Type {
     public String toString() {
         return "$Undefined";
     }
+
     @Override
     public boolean equals(Type type) {
         return true;

@@ -1,15 +1,21 @@
 package toorla.visitors;
 
 import toorla.ast.Program;
-import toorla.ast.declarations.classes.*;
-import toorla.ast.declarations.classes.classmembers.*;
+import toorla.ast.declarations.classes.ClassDeclaration;
+import toorla.ast.declarations.classes.EntryClassDeclaration;
+import toorla.ast.declarations.classes.classmembers.FieldDeclaration;
+import toorla.ast.declarations.classes.classmembers.MethodDeclaration;
 import toorla.ast.declarations.localvars.ParameterDeclaration;
 import toorla.ast.expressions.*;
 import toorla.ast.expressions.binaryexpressions.*;
-import toorla.ast.expressions.unaryexpressions.*;
-import toorla.ast.expressions.value.*;
+import toorla.ast.expressions.unaryexpressions.Neg;
+import toorla.ast.expressions.unaryexpressions.Not;
+import toorla.ast.expressions.value.BoolValue;
+import toorla.ast.expressions.value.IntValue;
+import toorla.ast.expressions.value.StringValue;
 import toorla.ast.statements.*;
-import toorla.ast.statements.localvars.*;
+import toorla.ast.statements.localvars.LocalVarDef;
+import toorla.ast.statements.localvars.LocalVarsDefinitions;
 
 public class Visitor<R> implements IVisitor<R> {
     // Expression
@@ -182,5 +188,4 @@ public class Visitor<R> implements IVisitor<R> {
     public R visit(Program program) {
         return null;
     }
-
 }

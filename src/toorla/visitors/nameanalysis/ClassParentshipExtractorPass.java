@@ -27,23 +27,31 @@ public class ClassParentshipExtractorPass implements INameAnalyzingPass<Graph<St
             String className = cd.getName().getName();
             try {
                 inheritanceGraph.addNode(className);
-            } catch (NodeAlreadyExistsException ignored) {}
+            } catch (NodeAlreadyExistsException ignored) {
+            }
             if (cd.getParentName().getName() == null) {
                 try {
                     inheritanceGraph.addNodeAsParentOf(className, "Any");
-                } catch (GraphDoesNotContainNodeException ignored) {}
+                } catch (GraphDoesNotContainNodeException ignored) {
+                }
                 continue;
             }
             String parentName = cd.getParentName().getName();
             try {
                 inheritanceGraph.addNodeAsParentOf(className, parentName);
-                ClassSymbolTableItem parentSTI = (ClassSymbolTableItem) SymbolTable.root
-                        .get(ClassSymbolTableItem.classModifier + parentName);
-                ClassSymbolTableItem thisClassSTI = (ClassSymbolTableItem) SymbolTable.root
-                        .get(ClassSymbolTableItem.classModifier + cd.getName().getName());
+                ClassSymbolTableItem parentSTI =
+                        (ClassSymbolTableItem)
+                                SymbolTable.root.get(
+                                        ClassSymbolTableItem.classModifier + parentName);
+                ClassSymbolTableItem thisClassSTI =
+                        (ClassSymbolTableItem)
+                                SymbolTable.root.get(
+                                        ClassSymbolTableItem.classModifier
+                                                + cd.getName().getName());
                 thisClassSTI.setParentSymbolTable(parentSTI.getSymbolTable());
                 thisClassSTI.getSymbolTable().setPreSymbolTable(parentSTI.getSymbolTable());
-            } catch (ItemNotFoundException | GraphDoesNotContainNodeException ignored) {}
+            } catch (ItemNotFoundException | GraphDoesNotContainNodeException ignored) {
+            }
         }
     }
 

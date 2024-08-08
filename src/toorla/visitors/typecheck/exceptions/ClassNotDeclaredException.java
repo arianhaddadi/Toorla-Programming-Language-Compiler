@@ -13,8 +13,7 @@ public class ClassNotDeclaredException extends CompileErrorException {
 
     @Override
     public String toString() {
-        return String.format("Error:Line:%d:There is " +
-                        "no class with name %s;", atLine
-               , className);
+        return String.format(
+                "Error:Line:%d:There is " + "no class with name %s;", atLine, className);
     }
 }

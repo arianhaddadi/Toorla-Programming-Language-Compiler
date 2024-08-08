@@ -16,7 +16,8 @@ public class NameAnalyzer {
 
     public void analyze() {
         NameCollectionPass nameCollectionPass = new NameCollectionPass();
-        ClassParentshipExtractorPass classParentshipExtractorPass = new ClassParentshipExtractorPass();
+        ClassParentshipExtractorPass classParentshipExtractorPass =
+                new ClassParentshipExtractorPass();
         NameCheckingPass nameCheckingPass = new NameCheckingPass();
         prepare();
         nameCollectionPass.analyze(program);
@@ -31,7 +32,8 @@ public class NameAnalyzer {
         classAnySymbolTableItem.setSymbolTable(new SymbolTable(SymbolTable.root));
         try {
             SymbolTable.root.put(classAnySymbolTableItem);
-        } catch (ItemAlreadyExistsException ignored) {}
+        } catch (ItemAlreadyExistsException ignored) {
+        }
         SymbolTable.push(classAnySymbolTableItem.getSymbolTable());
     }
 

@@ -5,21 +5,21 @@ import toorla.visitors.IVisitor;
 
 public class GreaterThan extends BinaryExpression {
 
-	public GreaterThan(Expression lhs, Expression rhs) {
-		super(lhs, rhs);
-	}
+    public GreaterThan(Expression lhs, Expression rhs) {
+        super(lhs, rhs);
+    }
 
-	public GreaterThan() {
-		super(null, null);
-	}
+    public GreaterThan() {
+        super(null, null);
+    }
 
-	@Override
-	public <R> R accept(IVisitor<R> visitor) {
-		return visitor.visit(this);
-	}
+    @Override
+    public <R> R accept(IVisitor<R> visitor) {
+        return visitor.visit(this);
+    }
 
-	@Override
-	public String toString() {
-		return "Gt";
-	}
+    @Override
+    public String toString() {
+        return "Gt";
+    }
 }

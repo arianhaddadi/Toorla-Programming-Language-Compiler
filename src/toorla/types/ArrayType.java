@@ -22,9 +22,10 @@ public class ArrayType extends Type {
 
     @Override
     public boolean equals(Type type) {
-        if(type instanceof ArrayType)
+        if (type instanceof ArrayType) {
             return ((ArrayType) type).getSingleType().equals(singleType);
-        else
+        } else {
             return false;
+        }
     }
 }

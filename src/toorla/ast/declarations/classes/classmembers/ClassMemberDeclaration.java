@@ -6,5 +6,4 @@ public interface ClassMemberDeclaration {
     <R> R accept(IVisitor<R> visitor);
 
     String toString();
-
 }
